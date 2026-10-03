@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUTONOMOUS SAFETY-FI 96X | Creative Computation & Hazard Sentinel</title>
+    
+    <!-- Futuristic Typography: Plus Jakarta Sans, Space Grotesk & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        canvas: '#08090A',
+                        graphite: '#0F1115',
+                        surface: '#14171F',
+                        steel: '#1E2330',
+                        titanium: '#E2E8F0',
+                        chartreuse: '#CCFF00', // Iconic Antriksh Electric Lime
+                        lime: '#CCFF00',
+                        coral: '#FF8A65',
+                        lavender: '#C084FC',
+                        tungsten: '#F59E0B',
+                        crimson: '#F43F5E',
+                        emerald: '#10B981',
+                        cyber: '#38BDF8',
+                        oled: '#040807'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        display: ['"Space Grotesk"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        /* ======================================================== */
+        /* CREATIVE COMPUTATION & FUTURISTIC OS DESIGN SYSTEM       */
+        /* ======================================================== */
+        :root {
+            --ease-spring: cubic-bezier(0.19, 1, 0.22, 1);
+            --ease-dock: cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        body {
+            background-color: #08090A;
+            color: #F8FAFC;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(204, 255, 0, 0.04) 0%, transparent 60%),
+                radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 45%),
+                radial-gradient(circle at 15% 65%, rgba(244, 63, 94, 0.04) 0%, transparent 45%),
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            overflow-x: hidden;
+        }
+
+        /* 0.5px Precision Hairline Borders */
+        .hairline-border {
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+        }
+        .hairline-t {
+            border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+        }
+        .hairline-b {
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Antriksh Style Glassmorphism & Spotlight */
+        .spotlight-card {
+            background: rgba(15, 17, 21, 0.78);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+        .spotlight-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: radial-gradient(500px circle at var(--mouse-x, -500px) var(--mouse-y, -500px), rgba(204, 255, 0, 0.35), transparent 70%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 20;
+        }
+        .spotlight-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Button & Pill Styles */
+        .premium-btn {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.3s var(--ease-spring);
+        }
+        .premium-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(204, 255, 0, 0.4);
+            transform: translateY(-1.5px);
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+        }
+        .premium-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Form Selector Pills (Antriksh Image 5) */
+        .form-pill-btn {
+            background: rgba(20, 24, 30, 0.85);
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            color: #94A3B8;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .form-pill-btn:hover {
+            border-color: rgba(204, 255, 0, 0.4);
+            color: #F8FAFC;
+        }
+        .form-pill-btn.active {
+            background: #CCFF00;
+            color: #000000;
+            font-weight: 700;
+            border-color: #CCFF00;
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.45);
+        }
+
+        /* SENSOR ASSEMBLY FLY-IN & MAGNETIC SETTLE ANIMATIONS */
+        .module-settle-card {
+            transition: 
+                transform 0.95s var(--ease-dock), 
+                opacity 0.75s ease-out, 
+                filter 0.75s ease-out, 
+                border-color 0.4s ease, 
+                box-shadow 0.4s ease;
+            will-change: transform, opacity, filter;
+        }
+
+        .module-exploded-0 { transform: translate3d(-150px, -110px, 50px) rotate(-7deg) scale(0.85); opacity: 0; filter: blur(14px); }
+        .module-exploded-1 { transform: translate3d(0, -160px, 70px) rotate(3deg) scale(0.85); opacity: 0; filter: blur(14px); }
+        .module-exploded-2 { transform: translate3d(150px, -110px, 50px) rotate(7deg) scale(0.85); opacity: 0; filter: blur(14px); }
+        .module-exploded-3 { transform: translate3d(-150px, 120px, 50px) rotate(-6deg) scale(0.85); opacity: 0; filter: blur(14px); }
+        .module-exploded-4 { transform: translate3d(0, 160px, 70px) rotate(2deg) scale(0.85); opacity: 0; filter: blur(14px); }
+        .module-exploded-5 { transform: translate3d(150px, 120px, 50px) rotate(-5deg) scale(0.85); opacity: 0; filter: blur(14px); }
+
+        .module-docked {
+            transform: translate3d(0, 0, 0) rotate(0deg) scale(1) !important;
+            opacity: 1 !important;
+            filter: blur(0px) !important;
+        }
+        .module-docked:hover {
+            transform: translateY(-4px) scale(1.01) !important;
+            border-color: rgba(204, 255, 0, 0.4) !important;
+            box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* Inspect Shockwave & Recoil Animation */
+        .dock-slam-shockwave {
+            animation: slamShockwave 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slamShockwave {
+            0% {
+                transform: scale(0.92) translate3d(0, -20px, 0);
+                box-shadow: 0 0 70px rgba(204, 255, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                border-color: #CCFF00;
+            }
+            45% {
+                transform: scale(1.03) translate3d(0, 4px, 0);
+                box-shadow: 0 0 35px rgba(204, 255, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                border-color: rgba(204, 255, 0, 0.6);
+            }
+            100% {
+                transform: scale(1) translate3d(0, 0, 0);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.08);
+            }
+        }
+
+        /* Physical Metal Rocker Switch */
+        .metal-rocker {
+            width: 58px;
+            height: 30px;
+            border-radius: 15px;
+            background: #111520;
+            border: 0.5px solid rgba(255, 255, 255, 0.12);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s var(--ease-spring);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+        .metal-rocker-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%);
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            transition: all 0.4s var(--ease-spring);
+        }
+        .metal-rocker.active {
+            background: rgba(204, 255, 0, 0.25);
+            border-color: #CCFF00;
+        }
+        .metal-rocker.active .metal-rocker-thumb {
+            left: 29px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #CCFF00 100%);
+            box-shadow: 0 0 16px rgba(204, 255, 0, 0.7);
+        }
+
+        /* OLED Glass 16x2 Matrix Screen */
+        .oled-glass-screen {
+            background: #040807;
+            border: 0.5px solid rgba(16, 185, 129, 0.22);
+            box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.98), 0 0 22px rgba(16, 185, 129, 0.06);
+            position: relative;
+        }
+        .oled-pixel-text {
+            color: #A7F3D0;
+            text-shadow: 0 0 6px rgba(52, 211, 153, 0.7);
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0.15em;
+            line-height: 1.45;
+            transition: all 0.35s ease;
+        }
+        .oled-state-gas { color: #FDE68A !important; text-shadow: 0 0 8px rgba(245, 158, 11, 0.85) !important; }
+        .oled-state-fire { color: #FECDD3 !important; text-shadow: 0 0 8px rgba(244, 63, 94, 0.9) !important; }
+
+        /* Smartphone Mockup HUD */
+        .phone-frame {
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .phone-shake {
+            animation: phoneVibe 0.5s ease-in-out;
+        }
+        @keyframes phoneVibe {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-3px, 2px) rotate(-1deg); }
+            40% { transform: translate(3px, -2px) rotate(1deg); }
+            60% { transform: translate(-2px, -1px) rotate(-0.5deg); }
+            80% { transform: translate(2px, 1px) rotate(0.5deg); }
+        }
+
+        /* 3D Kinetic Tilt Wrapper */
+        .tilt-card-3d {
+            transform-style: preserve-3d;
+            perspective: 1200px;
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Dynamic Circuit Webbing Fiber Path */
+        #circuitWebbingSvg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 35;
+        }
+
+        /* Emergency Flash Vignette */
+        #emergencyVignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .vignette-fire {
+            background: radial-gradient(circle at center, transparent 40%, rgba(244, 63, 94, 0.22) 100%);
+            opacity: 1 !important;
+            animation: pulseVignette 1.8s infinite;
+        }
+        .vignette-gas {
+            background: radial-gradient(circle at center, transparent 40%, rgba(245, 158, 11, 0.18) 100%);
+            opacity: 1 !important;
+            animation: pulseVignette 2.2s infinite;
+        }
+        @keyframes pulseVignette {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Blinking terminal cursor */
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Slow Cinematic Shutter Curtain Unveil (Apple / Hardware Grade) */
+        .shutter-top-open {
+            transform: translateY(-101%) !important;
+        }
+        .shutter-bottom-open {
+            transform: translateY(101%) !important;
+        }
+        .boot-core-fade {
+            opacity: 0 !important;
+            transform: scale(0.92) !important;
+            filter: blur(14px) !important;
+            pointer-events: none !important;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .app-unveil-initial {
+            opacity: 0.15;
+            transform: scale(0.985);
+            filter: blur(8px);
+        }
+        .app-unveil-settled {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+            filter: blur(0px) !important;
+            transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen font-sans">
+
+    <!-- ======================================================== -->
+    <!-- CINEMATIC EMBEDDED SYSTEM BOOT & DUAL SHUTTER PRELOADER   -->
+    <!-- ======================================================== -->
+    <div id="terminalBootScreen" class="fixed inset-0 z-[200] overflow-hidden select-none pointer-events-auto cursor-pointer" onclick="dismissBootScreen()">
+        
+        <!-- Top Shutter Curtain -->
+        <div id="bootShutterTop" class="absolute inset-x-0 top-0 h-1/2 bg-[#06080B] border-b border-[#CCFF00]/25 transition-transform duration-[1800ms] ease-[cubic-bezier(0.77,0,0.175,1)] z-10 flex flex-col justify-end items-center pb-2">
+            <!-- Photon edge glow along bottom seam -->
+            <div class="absolute bottom-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#CCFF00] to-transparent shadow-[0_0_35px_#CCFF00,0_0_15px_#38BDF8]"></div>
+        </div>
+
+        <!-- Bottom Shutter Curtain -->
+        <div id="bootShutterBottom" class="absolute inset-x-0 bottom-0 h-1/2 bg-[#06080B] border-t border-[#CCFF00]/25 transition-transform duration-[1800ms] ease-[cubic-bezier(0.77,0,0.175,1)] z-10 flex flex-col justify-start items-center pt-2">
+            <!-- Photon edge glow along top seam -->
+            <div class="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#CCFF00] to-transparent shadow-[0_0_35px_#CCFF00,0_0_15px_#38BDF8]"></div>
+        </div>
+
+        <!-- Central Floating Diagnostic HUD Core -->
+        <div id="bootCoreCard" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 transition-all duration-700">
+            <!-- Squircle Badge -->
+            <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#0D1017] border-2 border-[#CCFF00] flex items-center justify-center shadow-[0_0_40px_rgba(204,255,0,0.45)] mb-6 transform hover:scale-105 transition-transform">
+                <span class="font-mono text-xl sm:text-2xl font-black text-[#CCFF00] tracking-tighter">96X</span>
+                <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#CCFF00] animate-ping"></span>
+            </div>
+
+            <h1 class="font-display text-3xl sm:text-5xl font-extrabold text-white tracking-widest text-center uppercase mb-2">
+                SAFETY-FI 96X<span class="text-[#CCFF00]">*</span>
+            </h1>
+
+            <p class="font-mono text-[11px] sm:text-xs text-slate-400 tracking-[0.25em] text-center uppercase mb-6 flex items-center gap-2">
+                <span>AUTONOMOUS KITCHEN SENTINEL</span>
+                <span class="text-coral">✦</span>
+                <span>ATMEGA328P OS v2.4</span>
+            </p>
+
+            <!-- Real-Time Hardware Diagnostic Log Box -->
+            <div class="w-80 sm:w-[480px] bg-[#0A0D14]/90 border border-white/10 rounded-2xl p-4 font-mono text-[11px] text-slate-400 space-y-2 shadow-2xl mb-6 backdrop-blur-xl">
+                <div class="flex items-center justify-between pb-2 border-b border-white/5 text-[10px] uppercase text-slate-500">
+                    <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse"></span> HARDWARE DIAGNOSTIC REGISTER</span>
+                    <span class="text-[#CCFF00] font-bold">16 MHz BUS</span>
+                </div>
+                <div id="bootLogStream" class="h-24 overflow-hidden flex flex-col justify-end space-y-1.5 font-mono text-[11px]">
+                    <div class="text-[#CCFF00]">[0.000s] ATmega328P Logic Substrate Initialized... OK</div>
+                </div>
+            </div>
+
+            <!-- Smooth Progress Bar -->
+            <div class="w-80 sm:w-[480px] max-w-full space-y-2 mb-6">
+                <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
+                    <div id="bootProgressBar" class="h-full bg-gradient-to-r from-[#CCFF00] via-[#38BDF8] to-[#C084FC] rounded-full transition-all duration-300 ease-out shadow-[0_0_12px_rgba(204,255,0,0.6)]" style="width: 12%;"></div>
+                </div>
+                <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                    <span id="bootStageLabel">SYNCHRONIZING EMBEDDED CORES</span>
+                    <span id="bootPercentText" class="text-[#CCFF00] font-bold">12%</span>
+                </div>
+            </div>
+
+            <!-- Action Skip Prompt -->
+            <button onclick="dismissBootScreen()" class="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500 hover:text-[#CCFF00] transition py-1.5 px-4 rounded-full border border-white/5 hover:border-[#CCFF00]/40">
+                [ PRESS ANY KEY OR CLICK TO UNVEIL ]
+            </button>
+        </div>
+    </div>
+
+    <!-- GLOBAL EMERGENCY VIGNETTE AURA -->
+    <div id="emergencyVignette"></div>
+
+    <!-- HOLOGRAPHIC LASER SCANNING BEAM -->
+    <div id="laserScanBeam" class="fixed inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#CCFF00] to-transparent shadow-[0_0_20px_#ccff00,0_0_40px_rgba(204,255,0,0.8)] z-[100] pointer-events-none opacity-0"></div>
+
+    <!-- DYNAMIC CIRCUIT WEBBING FIBER SVG OVERLAY -->
+    <svg id="circuitWebbingSvg">
+        <defs>
+            <filter id="fiberGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+        <path id="activeFiberPath" fill="none" stroke="#CCFF00" stroke-width="2" filter="url(#fiberGlow)" stroke-dasharray="6 4" class="opacity-0 transition-opacity duration-300"/>
+    </svg>
+
+    <!-- ======================================================== -->
+    <!-- MAIN APPLICATION CONTAINER (CONTROLLED BY CINEMATIC UNVEIL) -->
+    <!-- ======================================================== -->
+    <div id="appContainer" class="app-unveil-initial relative z-10">
+
+    <!-- ======================================================== -->
+    <!-- TOP NAVIGATION BAR: ARCHITECTURAL PRECISION              -->
+    <!-- ======================================================== -->
+    <header class="relative z-50 hairline-b bg-[#08090A]/90 backdrop-blur-2xl px-6 sm:px-10 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-6">
+            
+            <!-- Left: Brand Identity -->
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-[#0F1115] border border-[#CCFF00] flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+                    <span class="text-xs font-mono font-black text-[#CCFF00]">96X</span>
+                </div>
+                <div>
+                    <span class="font-display text-base sm:text-lg font-bold tracking-tight text-white block leading-tight">Safety-Fi 96X</span>
+                    <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Autonomous Sentinel &bull; ATmega328P</span>
+                </div>
+            </div>
+
+            <!-- Right: Controls, Web Serial, Audio & State Beacon -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                
+                <!-- Reboot Preloader Trigger -->
+                <button onclick="rebootPreloader()" class="premium-btn px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                    <i data-lucide="terminal" class="w-3.5 h-3.5 text-[#CCFF00]"></i>
+                    <span class="hidden md:inline">Reboot OS</span>
+                </button>
+
+                <!-- Audio FX Toggle -->
+                <button id="audioToggleBtn" onclick="toggleAudio()" class="premium-btn px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                    <i id="audioIcon" data-lucide="volume-2" class="w-3.5 h-3.5 text-[#CCFF00]"></i>
+                    <span id="audioLabel" class="hidden md:inline">Audio: ON</span>
+                </button>
+
+                <!-- Web Serial Connect Button -->
+                <button id="webSerialIngressBtn" onclick="toggleWebSerialDirect()" class="premium-btn px-4 py-1.5 rounded-full text-xs font-mono tracking-wider text-slate-300 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span id="serialIngressLabel" class="hidden sm:inline">Connect Hardware</span>
+                    <span class="sm:hidden">Serial</span>
+                </button>
+
+                <!-- Master State Beacon -->
+                <div id="masterStatePill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-medium tracking-wider text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="masterStateText">STANDBY &bull; NOMINAL</span>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ======================================================== -->
+    <!-- HERO SECTION: ANTRIKSH EDITORIAL + THREE.JS KINETIC      -->
+    <!-- ======================================================== -->
+    <section class="relative z-30 max-w-7xl mx-auto px-6 sm:px-10 pt-12 pb-14">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <!-- LEFT COLUMN: EDITORIAL TECH COPY (6 Cols) -->
+            <div class="lg:col-span-6 space-y-6">
+                
+                <!-- Antriksh Core Philosophy Pill & Starburst Sticker -->
+                <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-[#14171F] hairline-border text-[11px] font-mono text-slate-300">
+                    <span class="text-coral text-sm">✦</span>
+                    <span class="uppercase tracking-widest text-slate-400 font-semibold">CORE PHILOSOPHY:</span>
+                    <span class="text-slate-200 hidden sm:inline">&ldquo;SUB-150ms AUTONOMOUS INTERVENTION.&rdquo;</span>
+                </div>
+
+                <!-- Antriksh Style Section Tag & Enormous Headline with Hash -->
+                <div class="space-y-2">
+                    <span class="text-xs font-mono uppercase tracking-[0.25em] text-[#CCFF00] block">
+                        01 / AUTONOMOUS INTERVENTION PLATFORM
+                    </span>
+                    <h1 class="font-sans text-5xl sm:text-7xl font-extrabold tracking-tight text-white leading-[1.02]">
+                        The sentinel core<span class="text-[#CCFF00]">.</span>
+                    </h1>
+                </div>
+
+                <!-- Crisp Technical Subtitle -->
+                <p class="font-sans text-base sm:text-lg text-slate-400 font-normal leading-relaxed max-w-xl">
+                    Mission-critical embedded hazard mitigation for culinary environments. 10-bit analog gas gradient tracking, optical combustion infrared trip, active relay interlocks, and cellular quad-band telemetry.
+                </p>
+
+                <!-- Action Controls (With Tagda Inspect Animation Trigger) -->
+                <div class="flex flex-wrap items-center gap-4 pt-1">
+                    <button id="heroInspectBtn" onclick="triggerCinematicInspectSequence()" class="premium-btn px-7 py-3.5 rounded-full text-xs font-mono uppercase tracking-widest text-black font-bold flex items-center gap-3 bg-[#CCFF00] hover:bg-[#D4F63C] border-[#CCFF00] shadow-[0_0_25px_rgba(204,255,0,0.35)] cursor-pointer group">
+                        <i data-lucide="layers" class="w-4 h-4 text-black group-hover:scale-110 group-hover:rotate-6 transition-transform"></i>
+                        <span>Inspect Subsystems</span>
+                        <span class="w-2 h-2 rounded-full bg-black animate-ping ml-0.5"></span>
+                    </button>
+
+                    <button id="editorialMuteBtn" onclick="toggleTactileMute()" class="premium-btn px-5 py-3.5 rounded-full text-xs font-mono uppercase tracking-widest text-slate-300 flex items-center gap-2.5">
+                        <i id="muteIcon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+                        <span id="muteLabel">Mute Latch (Pin 12)</span>
+                    </button>
+                </div>
+
+                <!-- Hazard State Simulator Strip -->
+                <div class="pt-2 flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
+                    <span class="text-slate-500 font-semibold">Simulate Hazards:</span>
+                    <button onclick="setSystemState(0)" class="px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">&bull; Normal (Safe)</button>
+                    <button onclick="setSystemState(1)" class="px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition">&bull; Gas Leak (&gt;400)</button>
+                    <button onclick="setSystemState(2)" class="px-3 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">&bull; Fire Hazard</button>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: THREE.JS 3D VIEWPORT WITH HOLOGRAPHIC RINGS -->
+            <div class="lg:col-span-6 relative">
+                <div id="tiltHeroCard" class="tilt-card-3d spotlight-card p-2 relative overflow-hidden">
+                    
+                    <!-- 3D Three.js Viewport -->
+                    <div id="threejsViewport" class="relative w-full h-[450px] rounded-2xl overflow-hidden bg-[#0A0D15]">
+                        
+                        <!-- Top-Left Discrete Status Badge -->
+                        <div class="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-mono text-slate-300 z-10">
+                            <span id="threejsDot" class="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></span>
+                            <span id="threejsLabel">Kinetic Cooktop &bull; Holographic CAD</span>
+                        </div>
+
+                        <!-- Top-Right 3D Interactive Tag -->
+                        <div class="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400 z-10">
+                            <i data-lucide="rotate-3d" class="w-3.5 h-3.5 text-[#CCFF00]"></i>
+                            <span>Interactive CAD</span>
+                        </div>
+
+                        <!-- Bottom Minimalist Hardware Specs -->
+                        <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between p-3.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 text-xs font-mono text-slate-400 z-10">
+                            <div>
+                                <span class="text-[10px] text-slate-500 uppercase block tracking-wider font-semibold">Extractor Hood Fan</span>
+                                <span id="hoodRpmLabel" class="text-white font-medium text-sm">0 RPM (IDLE)</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-500 uppercase block tracking-wider font-semibold">Solenoid Sol.</span>
+                                <span id="solenoidLabel" class="text-slate-400 font-medium text-sm">DE-ENERGIZED</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: GENERATIVE VISUAL ENGINEERING STUDIO (IMAGE 5)-->
+    <!-- ======================================================== -->
+    <!-- SECTION 2: DIGITAL TWIN & HAZARD DYNAMICS SIMULATION     -->
+    <!-- 100% HARDWARE-ALIGNED 3D PHYSICAL SIMULATION STUDIO      -->
+    <!-- ======================================================== -->
+    <section class="relative z-30 max-w-7xl mx-auto px-6 sm:px-10 py-16 hairline-t space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <span class="text-xs font-mono uppercase tracking-[0.25em] text-[#CCFF00] block mb-2">
+                    02 / DIGITAL TWIN &amp; REAL-TIME HAZARD DYNAMICS
+                </span>
+                <h2 class="font-sans text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                    Kitchen Hazard Dynamics<span class="text-[#CCFF00]">.</span>
+                </h2>
+            </div>
+            <p class="text-xs font-mono text-slate-400 max-w-md leading-relaxed">
+                Autonomous 3D physical modeling of combustible gas diffusion, thermal flame plasma, and emergency actuator response in true XYZ perspective.
+            </p>
+        </div>
+
+        <!-- Sub-Pills Bar (Hardware Aligned) -->
+        <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <span class="px-3.5 py-1.5 rounded-xl bg-[#CCFF00] text-black font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+                <span>🍳 Physical Digital Twin (6 Modules)</span>
+            </span>
+            <span class="px-3.5 py-1.5 rounded-xl bg-[#14171F] hairline-border text-slate-300 flex items-center gap-2">
+                <span>☁ Combustible Gas &amp; Smoke Physics</span>
+            </span>
+            <span class="px-3.5 py-1.5 rounded-xl bg-[#14171F] hairline-border text-slate-300 flex items-center gap-2">
+                <span>⚡ ATmega328P Silicon Bus Topology</span>
+            </span>
+        </div>
+
+        <!-- Studio Box (Main Card) -->
+        <div class="spotlight-card p-6 sm:p-8 space-y-8 bg-[#0D1017]/90">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Controls Column (5 Cols) -->
+                <div class="lg:col-span-5 space-y-6">
+                    
+                    <!-- 3D Form Selection Buttons -->
+                    <div class="space-y-3">
+                        <span class="text-[11px] font-mono uppercase tracking-widest text-slate-400 block font-semibold">
+                            CHOOSE KITCHEN SYSTEM MODULE
+                        </span>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-mono">
+                            <button onclick="setGenerativeForm('cooktop')" id="btnForm-cooktop" class="form-pill-btn active py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>Station Twin</span> <span class="text-sm">🍳</span>
+                            </button>
+                            <button onclick="setGenerativeForm('gas')" id="btnForm-gas" class="form-pill-btn py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>MQ Gas Plume</span> <span class="text-sm">☁</span>
+                            </button>
+                            <button onclick="setGenerativeForm('flame')" id="btnForm-flame" class="form-pill-btn py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>IR Flame Plasma</span> <span class="text-sm">🔥</span>
+                            </button>
+                            <button onclick="setGenerativeForm('exhaust')" id="btnForm-exhaust" class="form-pill-btn py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>Exhaust Vortex</span> <span class="text-sm">🌀</span>
+                            </button>
+                            <button onclick="setGenerativeForm('sprinkler')" id="btnForm-sprinkler" class="form-pill-btn py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>Sprinkler Mist</span> <span class="text-sm">💧</span>
+                            </button>
+                            <button onclick="setGenerativeForm('silicon')" id="btnForm-silicon" class="form-pill-btn py-2.5 px-3 rounded-xl flex items-center justify-between">
+                                <span>MCU Bus Mesh</span> <span class="text-sm">⚡</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Render Style Selection -->
+                    <div class="space-y-3">
+                        <span class="text-[11px] font-mono uppercase tracking-widest text-slate-400 block font-semibold">
+                            RENDER STYLE
+                        </span>
+                        <div class="flex gap-2 text-xs font-mono">
+                            <button onclick="setParticleStyle('particles')" id="btnStyle-particles" class="form-pill-btn active px-4 py-2 rounded-xl">Point Cloud</button>
+                            <button onclick="setParticleStyle('streamlines')" id="btnStyle-streamlines" class="form-pill-btn px-4 py-2 rounded-xl">Aero Streamlines</button>
+                            <button onclick="setParticleStyle('wireframe')" id="btnStyle-wireframe" class="form-pill-btn px-4 py-2 rounded-xl">CAD Wireframe</button>
+                        </div>
+                    </div>
+
+                    <!-- Motion Speed Slider with Lime Accent -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono text-slate-400">
+                            <span>SIMULATION VELOCITY</span>
+                            <span id="speedValueLabel" class="text-[#CCFF00]">1.0x</span>
+                        </div>
+                        <input id="speedSlider" type="range" min="0.1" max="3.0" step="0.1" value="1.0" oninput="onSpeedChange(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#CCFF00]">
+                    </div>
+
+                    <!-- Control Action Buttons -->
+                    <div class="grid grid-cols-4 gap-2 pt-2">
+                        <button onclick="cycleHazardSimulation()" class="premium-btn py-2.5 rounded-xl text-[11px] font-mono text-slate-300 flex flex-col items-center justify-center gap-1 border-[#CCFF00]/40">
+                            <span>TEST HAZARD</span>
+                            <span id="hazardTestIcon" class="text-[10px] text-[#CCFF00]">⚡ CYCLIC</span>
+                        </button>
+                        <button onclick="shiftParticleColor()" class="premium-btn py-2.5 rounded-xl text-[11px] font-mono text-slate-300 flex flex-col items-center justify-center gap-1">
+                            <span>Color Spectrum</span>
+                            <span class="text-[10px] text-[#CCFF00]">&nearr;</span>
+                        </button>
+                        <button onclick="toggleParticlePause()" id="pauseBtn" class="premium-btn py-2.5 rounded-xl text-[11px] font-mono text-slate-300 flex flex-col items-center justify-center gap-1">
+                            <span id="pauseLabel">Pause</span>
+                            <span class="text-[10px] text-slate-400">||</span>
+                        </button>
+                        <button onclick="toggleAudio()" class="premium-btn py-2.5 rounded-xl text-[11px] font-mono text-slate-300 flex flex-col items-center justify-center gap-1">
+                            <span>AUDIO FX</span>
+                            <span class="text-[10px] text-[#CCFF00]">SFX</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- 3D Interactive Particle Viewport (7 Cols) -->
+                <div class="lg:col-span-7 relative">
+                    <div id="generativeStudioViewport" class="relative w-full h-[380px] sm:h-[440px] rounded-2xl overflow-hidden bg-[#07090E] border border-white/5 shadow-2xl flex items-center justify-center">
+                        
+                        <!-- Top HUD Coordinates -->
+                        <div class="absolute top-4 left-4 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono text-slate-400 z-10">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#CCFF00] animate-ping"></span>
+                            <span id="generativeFormInfoTag">COOKTOP TWIN / CHARTREUSE / 1,152 PARTICLES</span>
+                        </div>
+
+                        <!-- Top-Right Instructions -->
+                        <div class="absolute top-4 right-4 text-[10px] font-mono text-slate-500 z-10 hidden sm:block">
+                            DRAG TO ORBIT • SCROLL TO ZOOM
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Technical Micro-Copy Strip (Antriksh Style with Clean Bullets) -->
+            <div class="flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-500 pt-4 hairline-t">
+                <span id="generativeModelDetails">STATION TWIN • CHARTREUSE • 1,152 PARTICLES</span>
+                <span class="tracking-widest uppercase">TRUE XYZ PERSPECTIVE PROJECTION • EMBEDDED HAZARD MITIGATION</span>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 3: SENSOR ASSEMBLY MATRIX (MAGNETIC SETTLE)      -->
+    <!-- ======================================================== -->
+    <section id="hardware-inspection" class="relative z-30 max-w-7xl mx-auto px-6 sm:px-10 py-16 space-y-8">
+        
+        <!-- Header with Automatic Sensor Assembly Status -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 hairline-b pb-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-coral text-sm">✦</span>
+                    <span class="text-xs font-mono uppercase tracking-[0.25em] text-[#CCFF00]">02 / MODULAR HARDWARE ARCHITECTURE</span>
+                </div>
+                <h2 class="font-sans text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                    The experiment shelf<span class="text-[#CCFF00]">.</span>
+                </h2>
+                <p class="text-xs font-mono text-slate-400 mt-1">Autonomous hardware subsystems with magnetic bus docking and real-time register telemetry.</p>
+            </div>
+            
+            <!-- Real-Time Hardware Status Badge -->
+            <div class="flex items-center gap-3">
+                <div id="hardwareAssemblyStatus" class="flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/40 border border-white/10 text-xs font-mono text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>AUTONOMOUS BUS &bull; SCROLL TO DOCK</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6 MODULAR CARDS (SPOTLIGHT + MAGNETIC DOCK ENGINE) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="modularGridContainer">
+
+            <!-- 1. MQ GAS & SMOKE SPECTROMETRY (PIN A0) -->
+            <div id="card-mq-gas" data-card-idx="0" class="spotlight-card module-settle-card module-exploded-0 p-7 flex flex-col justify-between space-y-6">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">01 / MQ Spectrometer</span>
+                    </div>
+                    <span id="dockTag0" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">PIN A0 &bull; FLOATING</span>
+                </div>
+
+                <!-- Minimalist Fluid Ring with Calibration Ticks -->
+                <div class="flex items-center justify-center py-2">
+                    <div id="gasHaloWrapper" class="relative w-44 h-44 flex items-center justify-center rounded-full transition-all duration-500">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <!-- Calibration Ticks Arc -->
+                            <circle cx="50" cy="50" r="44" stroke="#1A2130" stroke-width="2" stroke-dasharray="1 3" fill="none"/>
+                            <!-- Threshold Limit Marker (400 ADC) -->
+                            <circle cx="50" cy="50" r="44" stroke="#F59E0B" stroke-width="4" stroke-dasharray="2 274" stroke-dashoffset="-107" fill="none"/>
+                            <!-- Fluid Progress Ring in Lime/Cyan -->
+                            <circle id="gasFluidRing" cx="50" cy="50" r="38" stroke="#CCFF00" stroke-width="3.5" stroke-dasharray="238.7" stroke-dashoffset="218" fill="none" class="transition-all duration-300" style="transform: rotate(-90deg); transform-origin: 50% 50%;"/>
+                        </svg>
+
+                        <!-- Center Digital Metric -->
+                        <div class="absolute flex flex-col items-center pointer-events-none">
+                            <span id="gasNumericDisplay" class="font-sans text-5xl text-white font-extrabold tracking-tight">85</span>
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-[#CCFF00] mt-0.5">PPM ADC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weighted Glass Dial Slider -->
+                <div class="space-y-2 pt-2 hairline-t">
+                    <div class="flex justify-between text-[11px] font-mono text-slate-400">
+                        <span id="gasStatusPill" class="text-[#CCFF00] font-medium">SAFE [85 ADC]</span>
+                        <span class="text-amber-400">&uarr; Limit: 400</span>
+                    </div>
+                    <input id="gasSlider" type="range" min="0" max="1000" value="85" oninput="onGasSliderChange(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#CCFF00]">
+                </div>
+            </div>
+
+            <!-- 2. OPTICAL INFRARED FLAME SENSOR (PIN 8) -->
+            <div id="card-flame-sensor" data-card-idx="1" class="spotlight-card module-settle-card module-exploded-1 p-7 flex flex-col justify-between space-y-6">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">02 / Optical IR Shutter</span>
+                    </div>
+                    <span id="dockTag1" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">PIN 8 &bull; FLOATING</span>
+                </div>
+
+                <!-- Biometric Optical Lens Graphic with Laser Scan Sweep -->
+                <div class="relative w-full h-44 flex items-center justify-center my-auto overflow-hidden rounded-2xl bg-[#090D15] hairline-border">
+                    <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#CCFF00] to-transparent opacity-30 animate-pulse"></div>
+
+                    <!-- Iris Ring -->
+                    <div id="opticalLensRing" class="lens-iris w-28 h-28 rounded-full border border-slate-700/60 flex items-center justify-center transition-all duration-500">
+                        <div class="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center">
+                            <i id="flameStatusIcon" data-lucide="aperture" class="w-8 h-8 text-slate-400 transition-all"></i>
+                        </div>
+                    </div>
+                    <span id="flameStatusLabel" class="absolute bottom-3 text-[11px] font-mono text-slate-400 tracking-wider">OPTICAL STANDBY</span>
+                </div>
+
+                <!-- Shutter Trigger Action -->
+                <div class="pt-2 hairline-t">
+                    <button id="toggleFlameBtn" onclick="toggleCombustionTrigger()" class="w-full py-2.5 rounded-full text-xs font-mono uppercase tracking-wider text-slate-300 premium-btn flex items-center justify-center gap-2">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-500"></i>
+                        <span>Simulate Flame State</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. DHT11 MICRO-CLIMATE RIBBON (PIN 2) -->
+            <div id="card-dht11" data-card-idx="2" class="spotlight-card module-settle-card module-exploded-2 p-7 flex flex-col justify-between space-y-6">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">03 / Climate Ribbon</span>
+                    </div>
+                    <span id="dockTag2" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">PIN 2 &bull; FLOATING</span>
+                </div>
+
+                <!-- Climate Numbers -->
+                <div class="grid grid-cols-2 gap-6 my-auto">
+                    <div>
+                        <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400 block mb-1">Temperature</span>
+                        <span id="tempMetric" class="font-sans text-5xl text-white font-extrabold tracking-tight">27°C</span>
+                        <span class="text-[11px] font-mono text-slate-500 block mt-1">80.6°F Calibrated</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400 block mb-1">Humidity</span>
+                        <span id="humMetric" class="font-sans text-5xl text-white font-extrabold tracking-tight">48%</span>
+                        <span class="text-[11px] font-mono text-slate-500 block mt-1">RH Equilibrium</span>
+                    </div>
+                </div>
+
+                <!-- Organic Oscillating Silk Spline -->
+                <div class="pt-2 hairline-t">
+                    <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400 block mb-2">Atmospheric Waveform</span>
+                    <svg id="silkSplineSvg" class="w-full h-12" viewBox="0 0 200 40">
+                        <path id="silkPathA" d="M0,20 Q30,10 60,18 T120,12 T180,22 T200,16" stroke="#CCFF00" stroke-width="1.5" fill="none" opacity="0.9"/>
+                        <path id="silkPathB" d="M0,26 Q40,22 80,24 T160,18 T200,20" stroke="#38BDF8" stroke-width="1" stroke-dasharray="2 3" fill="none" opacity="0.6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 4. DUAL OPTO-ISOLATED SOLID-STATE ACTUATORS (PINS 6 & 7) -->
+            <div id="card-relays" data-card-idx="3" class="spotlight-card module-settle-card module-exploded-3 p-7 flex flex-col justify-between space-y-6">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">04 / Relay Actuators</span>
+                    </div>
+                    <span id="dockTag3" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">PINS 6/7 &bull; FLOATING</span>
+                </div>
+
+                <!-- Industrial Rocker Switches -->
+                <div class="grid grid-cols-2 gap-4 my-1">
+                    <!-- Fan Relay -->
+                    <div class="p-4 rounded-xl bg-[#090D16] hairline-border flex flex-col justify-between space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-slate-300 font-medium">Exhaust Fan</span>
+                            <span class="text-[10px] font-mono text-slate-500">Pin 7</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span id="fanRelayLabel" class="text-xs font-mono text-slate-400 font-semibold">CUT OFF</span>
+                            <div id="fanRockerSwitch" class="metal-rocker" onclick="manualToggleRelay('fan')">
+                                <div class="metal-rocker-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pump Relay -->
+                    <div class="p-4 rounded-xl bg-[#090D16] hairline-border flex flex-col justify-between space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-slate-300 font-medium">Sprinkler</span>
+                            <span class="text-[10px] font-mono text-slate-500">Pin 6</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span id="pumpRelayLabel" class="text-xs font-mono text-slate-400 font-semibold">CUT OFF</span>
+                            <div id="pumpRockerSwitch" class="metal-rocker" onclick="manualToggleRelay('pump')">
+                                <div class="metal-rocker-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interlock Warning Box -->
+                <div id="interlockNoteBox" class="p-3 rounded-xl bg-[#090D16] hairline-border text-[11px] font-mono text-slate-400 leading-relaxed">
+                    Interlock System: Fan active on gas; strictly locked during fire.
+                </div>
+            </div>
+
+            <!-- 5. SIM800L CELLULAR MODEM WITH SMARTPHONE MOCKUP -->
+            <div id="card-sim800l" data-card-idx="4" class="spotlight-card module-settle-card module-exploded-4 p-7 flex flex-col justify-between space-y-4">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">05 / Cellular GSM</span>
+                    </div>
+                    <span id="dockTag4" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">UART D10/11 &bull; FLOATING</span>
+                </div>
+
+                <!-- Simulated Smartphone Alert Preview -->
+                <div id="phoneMockupFrame" class="phone-frame w-full rounded-2xl bg-[#0A0D15] p-3 text-xs font-mono relative overflow-hidden">
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 pb-2 border-b border-white/5">
+                        <span class="font-bold text-slate-400">5G CELLULAR</span>
+                        <span id="phoneSimTime">00:00</span>
+                        <span>98% BAT</span>
+                    </div>
+
+                    <!-- Dynamic Notification Banner -->
+                    <div id="phoneNotificationBanner" class="mt-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-white/10 transition-all duration-300">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="notifIconBadge" class="w-2 h-2 rounded-full bg-[#CCFF00]"></span>
+                            <span id="notifSenderTitle" class="text-[10px] font-bold text-slate-300 uppercase">SAFETY-FI SENTINEL</span>
+                            <span class="text-[9px] text-slate-500 ml-auto">Now</span>
+                        </div>
+                        <p id="notifBodyText" class="text-[11px] text-slate-300 font-sans leading-tight">
+                            System Standby: Nominal climate, zero combustion detected.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dispatch Interface -->
+                <div class="flex gap-2 pt-1 hairline-t">
+                    <input id="smsPhoneInput" type="text" value="+91 98765 43210" class="bg-[#05070C] hairline-border text-xs px-3 py-2 rounded-full text-slate-200 flex-1 font-mono outline-none">
+                    <button onclick="dispatchSmsTest()" class="px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider text-black font-bold bg-[#CCFF00] hover:bg-[#D4F63C] premium-btn">
+                        Dispatch
+                    </button>
+                </div>
+            </div>
+
+            <!-- 6. 16x2 I2C DOT-MATRIX TELEMETRY (0x27) -->
+            <div id="card-i2c-lcd" data-card-idx="5" class="spotlight-card module-settle-card module-exploded-5 p-7 flex flex-col justify-between space-y-6">
+                <!-- Header with Antriksh Pill -->
+                <div class="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span class="text-[11px] font-mono text-slate-300 uppercase tracking-widest font-bold">06 / HD44780 I2C Matrix</span>
+                    </div>
+                    <span id="dockTag5" class="text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">I2C 0x27 &bull; FLOATING</span>
+                </div>
+
+                <!-- Dark-Tinted OLED Glass Screen -->
+                <div class="oled-glass-screen p-4 rounded-xl my-auto">
+                    <div id="oledScreenText" class="oled-pixel-text p-2 rounded text-sm font-bold min-h-[60px] flex flex-col justify-center">
+                        <div id="lcdRowA">T:27°C  H:48%    </div>
+                        <div id="lcdRowB">Gas:85 [Safe]   </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[11px] font-mono text-slate-400 pt-2 hairline-t">
+                    <span id="lcdNoiseTag">&bull; 10s Non-Blocking Recovery Active</span>
+                    <span id="lcdStateMode">OLED Standby</span>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 4: PINOUT MATRIX & DYNAMIC CIRCUIT WEBBING       -->
+    <!-- ======================================================== -->
+    <section class="relative z-30 max-w-7xl mx-auto px-6 sm:px-10 py-16 hairline-t space-y-8">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-coral text-sm">✦</span>
+                <span class="text-xs font-mono uppercase tracking-[0.25em] text-[#CCFF00]">03 / MICROCONTROLLER TOPOLOGY</span>
+            </div>
+            <h2 class="font-sans text-4xl sm:text-5xl font-extrabold text-white tracking-tight">Pinout Architecture &amp; Trace Webbing<span class="text-[#CCFF00]">.</span></h2>
+            <p class="text-xs font-mono text-slate-400 mt-1">Hover over any hardware specification row to illuminate an animated fiber trace connecting to its inspection module.</p>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl spotlight-card">
+            <table class="w-full text-left text-xs font-mono">
+                <thead class="hairline-b text-[11px] uppercase text-slate-400 bg-black/40">
+                    <tr>
+                        <th class="px-6 py-4">Hardware Module</th>
+                        <th class="px-6 py-4">MCU Pin</th>
+                        <th class="px-6 py-4">Electrical Spec</th>
+                        <th class="px-6 py-4">Firmware Logic</th>
+                        <th class="px-6 py-4">Safety Role</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/[0.04] text-slate-300">
+                    
+                    <tr id="row-mq" class="hover:bg-amber-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-mq', 'card-mq-gas')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-slate-200">MQ Gas / Smoke Sensor</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Analog Pin A0</td>
+                        <td class="px-6 py-4 text-slate-400">10-Bit ADC (0 - 5.0V)</td>
+                        <td class="px-6 py-4 text-amber-500">&gt; 400 ADC units</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Continuous analog PPM gradient tracking of combustible LPG and smoke.</td>
+                    </tr>
+
+                    <tr id="row-flame" class="hover:bg-rose-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-flame', 'card-flame-sensor')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-rose-400">Optical Flame IR Sensor</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Digital Pin 8</td>
+                        <td class="px-6 py-4 text-slate-400">TTL Digital Input</td>
+                        <td class="px-6 py-4 text-rose-500">Active-LOW (0V = Flame)</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Sub-millisecond phototransistor responding to open flame infrared emissions.</td>
+                    </tr>
+
+                    <tr id="row-dht" class="hover:bg-slate-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-dht', 'card-dht11')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-slate-200">DHT11 Micro-Climate</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Digital Pin 2</td>
+                        <td class="px-6 py-4 text-slate-400">1-Wire Digital Bus</td>
+                        <td class="px-6 py-4 text-slate-400">Single-bus Bitstream</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Monitors ambient thermal equilibrium and relative atmospheric humidity.</td>
+                    </tr>
+
+                    <tr id="row-relays" class="hover:bg-amber-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-relays', 'card-relays')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-amber-400">Dual Opto-Isolated Relays</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Pins 7 (Fan) &amp; 6 (Pump)</td>
+                        <td class="px-6 py-4 text-slate-400">Opto-Coupler 0V Sink</td>
+                        <td class="px-6 py-4 text-amber-500">Active-LOW Trigger</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Actuates extractor fan and water sprinkler. Kills fan on fire for oxygen starvation.</td>
+                    </tr>
+
+                    <tr id="row-sim" class="hover:bg-purple-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-sim', 'card-sim800l')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-purple-400">SIM800L Cellular Modem</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Pins 10 (RX), 11 (TX)</td>
+                        <td class="px-6 py-4 text-slate-400">SoftwareSerial UART</td>
+                        <td class="px-6 py-4 text-purple-400">9600 Baud Hayes AT</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Dispatches autonomous cellular SMS alerts. Pin 11 protected via 1k/2k divider.</td>
+                    </tr>
+
+                    <tr id="row-lcd" class="hover:bg-emerald-500/5 transition cursor-crosshair" onmouseenter="projectCircuitFiber('row-lcd', 'card-i2c-lcd')" onmouseleave="dismissCircuitFiber()">
+                        <td class="px-6 py-4 font-bold text-emerald-400">16x2 HD44780 LCD</td>
+                        <td class="px-6 py-4 text-[#CCFF00]">Pins A4 (SDA), A5 (SCL)</td>
+                        <td class="px-6 py-4 text-slate-400">I2C Open-Drain Bus</td>
+                        <td class="px-6 py-4 text-emerald-400">Address 0x27 (100 kHz)</td>
+                        <td class="px-6 py-4 text-slate-400 font-sans">Renders status buffer with periodic non-blocking I2C register noise recovery.</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="relative z-30 hairline-t py-12 px-6 sm:px-10 text-center text-xs font-mono text-slate-500 space-y-2">
+        <div>SAFETY-FI 96X &bull; Creative Technologist Architecture &bull; ATmega328P Hardware Parity</div>
+        <div class="text-[10px] text-slate-600">INVENTED WITH RIGOR &bull; SHIFTING PARTICLES ACROSS XYZ PERSPECTIVE</div>
+    </footer>
+
+    </div><!-- END appContainer -->
+
+    <!-- ======================================================== -->
+    <!-- MASTER CLIENT SCRIPT & GENERATIVE MATHEMATICAL ENGINE    -->
+    <!-- ======================================================== -->
+    <script>
+        lucide.createIcons();
+
+        let systemState = 0;
+        let gasAdc = 85;
+        let flameDetected = false;
+        let buzzerMuted = false;
+        let lastLcdRecalibration = Date.now();
+        let webSerialPort = null;
+        let isAssembling = false;
+        let isDocked = false;
+        let audioEnabled = true;
+
+        // ========================================================
+        // 1. BOOT SEQUENCE PRELOADER CONTROLLER (SLOW CINEMATIC UNVEIL)
+        // ========================================================
+        let bootProgress = 12;
+        let isUnveiling = false;
+        const bootDiagnosticSteps = [
+            { pct: 22, log: "[0.000s] ATmega328P 16MHz Clock Initialized... OK", stage: "CLOCK LOCKED" },
+            { pct: 44, log: "[0.082s] I2C 16x2 HD44780 LCD @ 0x27 Handshake... OK", stage: "I2C BUS SYNC" },
+            { pct: 66, log: "[0.164s] SIM800L Cellular Modem UART AT+CSQ (24,99)... OK", stage: "GSM CSQ 24/31" },
+            { pct: 84, log: "[0.245s] MQ Gas Sensor (A0) & Optical IR Flame (D8)... OK", stage: "SENSORS ARMED" },
+            { pct: 96, log: "[0.340s] Dual Opto Relays (D6/D7) Interlock Secured... OK", stage: "ACTUATORS READY" },
+            { pct: 100, log: "[0.450s] ALL CORES ARMED • AUTONOMOUS SAFETY-FI 96X ONLINE", stage: "SYSTEM ARMED" }
+        ];
+
+        let diagIndex = 0;
+        const bootInterval = setInterval(() => {
+            if (diagIndex < bootDiagnosticSteps.length) {
+                const step = bootDiagnosticSteps[diagIndex];
+                bootProgress = step.pct;
+                
+                const bar = document.getElementById('bootProgressBar');
+                const txt = document.getElementById('bootPercentText');
+                const lbl = document.getElementById('bootStageLabel');
+                const stream = document.getElementById('bootLogStream');
+                
+                if (bar) bar.style.width = `${bootProgress}%`;
+                if (txt) txt.innerText = `${bootProgress}%`;
+                if (lbl) lbl.innerText = step.stage;
+                if (stream) {
+                    const row = document.createElement('div');
+                    row.className = diagIndex === bootDiagnosticSteps.length - 1 ? "text-[#CCFF00] font-bold" : "text-slate-300";
+                    row.innerText = step.log;
+                    stream.appendChild(row);
+                    stream.scrollTop = stream.scrollHeight;
+                }
+                
+                diagIndex++;
+                if (bootProgress >= 100) {
+                    clearInterval(bootInterval);
+                    setTimeout(startSlowCinematicUnveil, 500);
+                }
+            }
+        }, 380);
+
+        function startSlowCinematicUnveil() {
+            if (isUnveiling) return;
+            isUnveiling = true;
+            clearInterval(bootInterval);
+
+            // Play rich cinematic sub-bass swell & harmonic unveil chime
+            playCinematicUnveilSound();
+
+            const coreCard = document.getElementById('bootCoreCard');
+            const shutterTop = document.getElementById('bootShutterTop');
+            const shutterBottom = document.getElementById('bootShutterBottom');
+            const app = document.getElementById('appContainer');
+
+            // Phase 1: Core HUD fades out gracefully (0.5s)
+            if (coreCard) {
+                coreCard.classList.add('boot-core-fade');
+            }
+
+            // Phase 2: Slow cinematic split shutters glide apart (1.8s)
+            setTimeout(() => {
+                if (shutterTop) shutterTop.classList.add('shutter-top-open');
+                if (shutterBottom) shutterBottom.classList.add('shutter-bottom-open');
+
+                // Main Dashboard gently scales in and de-blurs
+                if (app) {
+                    app.classList.remove('app-unveil-initial');
+                    app.classList.add('app-unveil-settled');
+                }
+
+                // Clean up preloader from DOM after shutters fully clear
+                setTimeout(() => {
+                    const screen = document.getElementById('terminalBootScreen');
+                    if (screen) screen.remove();
+                }, 2000);
+            }, 300);
+        }
+
+        function dismissBootScreen() {
+            if (isUnveiling) return;
+            bootProgress = 100;
+            const bar = document.getElementById('bootProgressBar');
+            const txt = document.getElementById('bootPercentText');
+            if (bar) bar.style.width = '100%';
+            if (txt) txt.innerText = '100%';
+            startSlowCinematicUnveil();
+        }
+
+        function rebootPreloader() {
+            location.reload();
+        }
+
+        window.addEventListener('keydown', dismissBootScreen);
+
+        // ========================================================
+        // 2. KITCHEN SAFETY DIGITAL TWIN & REAL-TIME HAZARD DYNAMICS
+        // ========================================================
+        let genScene, genCamera, genRenderer, genParticleSystem;
+        let genForm = 'cooktop';
+        let genStyle = 'particles';
+        let genSpeed = 1.0;
+        let genPaused = false;
+        let genColorIndex = 0;
+        const genPalette = [0xCCFF00, 0x38BDF8, 0xC084FC, 0xFF8A65, 0x10B981, 0xFFFFFF];
+        const TOTAL_GEN_PARTICLES = 1152;
+
+        function initGenerativeStudio() {
+            const container = document.getElementById('generativeStudioViewport');
+            if (!container) return;
+
+            genScene = new THREE.Scene();
+            genCamera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+            genCamera.position.set(0, 1.2, 7.2);
+            genCamera.lookAt(0, 0, 0);
+
+            genRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            genRenderer.setSize(container.clientWidth, container.clientHeight);
+            genRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(genRenderer.domElement);
+
+            buildGenerativeGeometry();
+
+            // Drag to Orbit
+            let isDragging = false;
+            let prevMouse = { x: 0, y: 0 };
+            container.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', e => {
+                if (!isDragging || !genParticleSystem) return;
+                const deltaX = e.clientX - prevMouse.x;
+                const deltaY = e.clientY - prevMouse.y;
+                genParticleSystem.rotation.y += deltaX * 0.008;
+                genParticleSystem.rotation.x += deltaY * 0.008;
+                prevMouse = { x: e.clientX, y: e.clientY };
+            });
+
+            // Wheel zoom
+            container.addEventListener('wheel', e => {
+                e.preventDefault();
+                genCamera.position.z = Math.min(12, Math.max(3.8, genCamera.position.z + e.deltaY * 0.005));
+            });
+
+            window.addEventListener('resize', () => {
+                if (!container || !genRenderer) return;
+                genCamera.aspect = container.clientWidth / container.clientHeight;
+                genCamera.updateProjectionMatrix();
+                genRenderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            animateGenerativeLoop();
+        }
+
+        function buildGenerativeGeometry() {
+            if (genParticleSystem) genScene.remove(genParticleSystem);
+
+            const count = TOTAL_GEN_PARTICLES;
+            const positions = new Float32Array(count * 3);
+            const currentColor = genPalette[genColorIndex % genPalette.length];
+
+            for (let i = 0; i < count; i++) {
+                const prog = i / count;
+                let x = 0, y = 0, z = 0;
+
+                if (genForm === 'cooktop') {
+                    // 1. Physical Station Twin (Cooktop base, dual burners, overhead hood, sprinkler)
+                    if (i < 380) {
+                        // Cooktop perimeter & countertop grid
+                        const subProg = i / 380;
+                        const edge = Math.floor(subProg * 4);
+                        const edgeProg = (subProg * 4) % 1;
+                        if (edge === 0) { x = -2.4 + edgeProg * 4.8; z = -1.4; }
+                        else if (edge === 1) { x = 2.4; z = -1.4 + edgeProg * 2.8; }
+                        else if (edge === 2) { x = 2.4 - edgeProg * 4.8; z = 1.4; }
+                        else { x = -2.4; z = 1.4 - edgeProg * 2.8; }
+                        y = -1.4;
+                    } else if (i < 680) {
+                        // Left & Right Burner concentric coils
+                        const burnerIdx = (i - 380) < 150 ? 0 : 1;
+                        const bProg = ((i - 380) % 150) / 150;
+                        const angle = bProg * Math.PI * 6;
+                        const r = 0.2 + bProg * 0.65;
+                        const cx = burnerIdx === 0 ? -1.2 : 1.2;
+                        x = cx + Math.cos(angle) * r;
+                        z = Math.sin(angle) * r;
+                        y = -1.35;
+                    } else if (i < 920) {
+                        // Overhead Extractor Hood duct & intake frame
+                        const hProg = (i - 680) / 240;
+                        const angle = hProg * Math.PI * 2;
+                        const r = 1.4;
+                        x = Math.cos(angle) * (1.8 * (1 - hProg * 0.2));
+                        z = Math.sin(angle) * (1.1 * (1 - hProg * 0.2));
+                        y = 1.8 + hProg * 0.8;
+                    } else if (i < 1040) {
+                        // Water sprinkler nozzle cluster at top center
+                        const sProg = (i - 920) / 120;
+                        const angle = sProg * Math.PI * 8;
+                        const r = sProg * 0.6;
+                        x = Math.cos(angle) * r;
+                        z = Math.sin(angle) * r;
+                        y = 2.4 - sProg * 0.3;
+                    } else {
+                        // Glowing sensor beacons (MQ Gas Sensor & IR Flame Sensor)
+                        const isGasSensor = i % 2 === 0;
+                        const cx = isGasSensor ? 1.6 : 0;
+                        const cz = isGasSensor ? -0.9 : 0.8;
+                        const cy = isGasSensor ? -0.8 : -0.7;
+                        x = cx + (Math.random() - 0.5) * 0.2;
+                        z = cz + (Math.random() - 0.5) * 0.2;
+                        y = cy + (Math.random() - 0.5) * 0.2;
+                    }
+
+                } else if (genForm === 'gas') {
+                    // 2. MQ Gas & Smoke Dispersion Plume
+                    const yNorm = prog;
+                    y = -1.5 + yNorm * 3.8;
+                    const r = 0.25 + 1.25 * Math.pow(yNorm, 1.2);
+                    const theta = (i * 0.35) + yNorm * 3.5;
+                    x = Math.cos(theta) * r;
+                    z = Math.sin(theta) * r;
+
+                } else if (genForm === 'flame') {
+                    // 3. Optical IR Flame Plasma Cone
+                    const h = prog * 3.4;
+                    const r = (1 - prog) * 1.15 * (1 + 0.25 * Math.sin(i * 0.7));
+                    const angle = i * 0.8 + prog * 3.0;
+                    x = Math.cos(angle) * r;
+                    z = Math.sin(angle) * r;
+                    y = h - 1.5;
+
+                } else if (genForm === 'exhaust') {
+                    // 4. Extractor Airflow Streamline Vortex
+                    y = -1.5 + prog * 3.6;
+                    const r = 2.0 - prog * 1.35; // converges into intake
+                    const angle = (i * 0.18) + prog * 8.0;
+                    x = Math.cos(angle) * r;
+                    z = Math.sin(angle) * r;
+
+                } else if (genForm === 'sprinkler') {
+                    // 5. Water Sprinkler Downward Suppression Cone
+                    y = 2.2 - prog * 3.8;
+                    const coneRadius = prog * 2.3;
+                    const angle = i * 0.85 + prog * 6.0;
+                    x = Math.cos(angle) * coneRadius + Math.sin(i * 3.3) * 0.06;
+                    z = Math.sin(angle) * coneRadius + Math.cos(i * 3.3) * 0.06;
+
+                } else {
+                    // 6. ATmega328P Silicon Bus & Pinout Trace Topology
+                    if (i < 420) {
+                        // Central Microcontroller IC Package & DIP leads
+                        const icProg = i / 420;
+                        const pin = Math.floor(icProg * 28);
+                        const isLeft = pin < 14;
+                        const pinIdx = isLeft ? pin : pin - 14;
+                        x = isLeft ? -1.0 : 1.0;
+                        y = -1.5 + (pinIdx / 14) * 3.0;
+                        z = (icProg % 0.05) * 4.0;
+                    } else {
+                        // 6 Peripheral Bus Rings (I2C, UART, ADC A0, Flame D8, Relays D6/D7)
+                        const busIdx = Math.floor(((i - 420) / (count - 420)) * 6);
+                        const bProg = (((i - 420) / (count - 420)) * 6) % 1;
+                        const busAngles = [0, Math.PI / 3, (2 * Math.PI) / 3, Math.PI, (4 * Math.PI) / 3, (5 * Math.PI) / 3];
+                        const baseA = busAngles[busIdx];
+                        const dist = 1.2 + bProg * 1.8;
+                        x = Math.cos(baseA + Math.sin(bProg * Math.PI * 4) * 0.15) * dist;
+                        z = Math.sin(baseA + Math.sin(bProg * Math.PI * 4) * 0.15) * dist;
+                        y = Math.sin(bProg * Math.PI * 2) * 0.6;
+                    }
+                }
+
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            if (genStyle === 'particles') {
+                const mat = new THREE.PointsMaterial({
+                    color: currentColor,
+                    size: 0.075,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending
+                });
+                genParticleSystem = new THREE.Points(geo, mat);
+            } else if (genStyle === 'streamlines') {
+                // Silky continuous streamlines along flow trajectory (no messy web!)
+                const lineIndices = [];
+                for (let i = 0; i < count - 1; i++) {
+                    if (i % 24 !== 23) {
+                        lineIndices.push(i, i + 1);
+                    }
+                }
+                geo.setIndex(lineIndices);
+                const mat = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+                    color: currentColor,
+                    transparent: true,
+                    opacity: 0.55,
+                    blending: THREE.AdditiveBlending
+                }));
+                genParticleSystem = mat;
+            } else {
+                // CAD Wireframe
+                const group = new THREE.Group();
+                const pMat = new THREE.PointsMaterial({ color: currentColor, size: 0.05, opacity: 0.6, transparent: true });
+                const lMat = new THREE.LineBasicMaterial({ color: currentColor, opacity: 0.35, transparent: true });
+                group.add(new THREE.Points(geo, pMat));
+                group.add(new THREE.Line(geo, lMat));
+                genParticleSystem = group;
+            }
+
+            genScene.add(genParticleSystem);
+            updateModelInfoLabels();
+        }
+
+        let genTime = 0;
+        function animateGenerativeLoop() {
+            requestAnimationFrame(animateGenerativeLoop);
+            if (genPaused) return;
+
+            genTime += 0.015 * genSpeed;
+
+            if (genParticleSystem) {
+                genParticleSystem.rotation.y += 0.007 * genSpeed;
+                genParticleSystem.rotation.x = Math.sin(genTime * 0.3) * 0.12;
+
+                // Reactive Hazard Simulation Dynamics
+                if (systemState === 1) { // Gas leak active
+                    genParticleSystem.rotation.y += 0.018;
+                } else if (systemState === 2) { // Fire active
+                    genParticleSystem.rotation.x += 0.022;
+                }
+            }
+
+            if (genRenderer && genScene && genCamera) {
+                genRenderer.render(genScene, genCamera);
+            }
+        }
+
+        function setGenerativeForm(formKey) {
+            genForm = formKey;
+            document.querySelectorAll('[id^="btnForm-"]').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btnForm-${formKey}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            buildGenerativeGeometry();
+            playHeavyDockSlam(2);
+        }
+
+        function setParticleStyle(styleKey) {
+            genStyle = styleKey;
+            document.querySelectorAll('[id^="btnStyle-"]').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btnStyle-${styleKey}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            buildGenerativeGeometry();
+            playHeavyDockSlam(3);
+        }
+
+        function onSpeedChange(val) {
+            genSpeed = parseFloat(val);
+            const label = document.getElementById('speedValueLabel');
+            if (label) label.innerText = `${genSpeed.toFixed(1)}x`;
+        }
+
+        function shiftParticleColor() {
+            genColorIndex++;
+            buildGenerativeGeometry();
+            playHeavyDockSlam(1);
+        }
+
+        function toggleParticlePause() {
+            genPaused = !genPaused;
+            const label = document.getElementById('pauseLabel');
+            if (label) label.innerText = genPaused ? "Resume" : "Pause";
+        }
+
+        function cycleHazardSimulation() {
+            // Cycle: 0 (Standby) -> 1 (Gas Leak) -> 2 (Flame Active) -> 0
+            const nextState = (systemState + 1) % 3;
+            setSystemState(nextState);
+            const icon = document.getElementById('hazardTestIcon');
+            if (icon) {
+                if (nextState === 1) icon.innerText = "⚠️ GAS LEAK";
+                else if (nextState === 2) icon.innerText = "🔥 FIRE ALERT";
+                else icon.innerText = "⚡ CYCLIC";
+            }
+            // Auto-switch 3D form to highlight hazard
+            if (nextState === 1) setGenerativeForm('gas');
+            else if (nextState === 2) setGenerativeForm('flame');
+            else setGenerativeForm('cooktop');
+        }
+
+        function updateModelInfoLabels() {
+            const formNames = {
+                cooktop: 'STATION TWIN',
+                gas: 'MQ GAS PLUME',
+                flame: 'IR FLAME PLASMA',
+                exhaust: 'EXHAUST VORTEX',
+                sprinkler: 'SPRINKLER MIST',
+                silicon: 'MCU SILICON BUS'
+            };
+            const colorNames = ['CHARTREUSE', 'CYAN', 'LAVENDER', 'CORAL', 'EMERALD', 'WHITE'];
+            const fName = formNames[genForm] || 'STATION TWIN';
+            const cName = colorNames[genColorIndex % colorNames.length];
+            const info = `${fName} / ${cName} / 1,152 PARTICLES`;
+            
+            const tagA = document.getElementById('generativeFormInfoTag');
+            const tagB = document.getElementById('generativeModelDetails');
+            if (tagA) tagA.innerText = info;
+            if (tagB) tagB.innerText = `${fName} • ${cName} • 1,152 PARTICLES`;
+        }
+
+        // ========================================================
+        // 3. THREE.JS 3D KINETIC COOKTOP VIEWPORT (CAD MODEL)
+        // ========================================================
+        let scene, camera, renderer, burnerA, burnerB, fanRotorGroup;
+        let ringGroupA, ringGroupB;
+        let currentFanSpeed = 0, targetFanSpeed = 0;
+
+        function initThreeJsCooktop() {
+            const container = document.getElementById('threejsViewport');
+            if (!container) return;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 4.3, 7.0);
+            camera.lookAt(0, 0.4, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambient);
+            const spot = new THREE.DirectionalLight(0xE2E8F0, 1.4);
+            spot.position.set(5, 10, 5);
+            scene.add(spot);
+
+            // Dark Brushed Steel Cooktop Base
+            const baseGeo = new THREE.BoxGeometry(5.2, 0.28, 3.2);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x111624, metalness: 0.88, roughness: 0.25 });
+            const cooktopBase = new THREE.Mesh(baseGeo, baseMat);
+            cooktopBase.position.y = -0.14;
+            scene.add(cooktopBase);
+
+            // Dual Physical Burner Rings
+            const ringGeo = new THREE.TorusGeometry(0.65, 0.05, 16, 64);
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, emissive: 0x1E293B, emissiveIntensity: 0.5 });
+            
+            burnerA = new THREE.Mesh(ringGeo, ringMat);
+            burnerA.rotation.x = Math.PI / 2;
+            burnerA.position.set(-1.3, 0.02, 0);
+            scene.add(burnerA);
+
+            burnerB = new THREE.Mesh(ringGeo, ringMat.clone());
+            burnerB.rotation.x = Math.PI / 2;
+            burnerB.position.set(1.3, 0.02, 0);
+            scene.add(burnerB);
+
+            // Concentric Holographic HUD Rings
+            function createHoloRingGroup(colorHex) {
+                const group = new THREE.Group();
+                const r1 = new THREE.Mesh(
+                    new THREE.RingGeometry(0.75, 0.8, 32),
+                    new THREE.MeshBasicMaterial({ color: colorHex, wireframe: true, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
+                );
+                r1.rotation.x = Math.PI / 2;
+                group.add(r1);
+
+                const r2 = new THREE.Mesh(
+                    new THREE.RingGeometry(0.95, 0.98, 24),
+                    new THREE.MeshBasicMaterial({ color: colorHex, wireframe: true, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+                );
+                r2.rotation.x = Math.PI / 2;
+                group.add(r2);
+                return group;
+            }
+
+            ringGroupA = createHoloRingGroup(0xCCFF00);
+            ringGroupA.position.set(-1.3, 0.45, 0);
+            scene.add(ringGroupA);
+
+            ringGroupB = createHoloRingGroup(0xCCFF00);
+            ringGroupB.position.set(1.3, 0.45, 0);
+            scene.add(ringGroupB);
+
+            // Overhead Extractor Hood
+            const hoodGeo = new THREE.BoxGeometry(4.8, 0.5, 2.4);
+            const hoodMat = new THREE.MeshStandardMaterial({ color: 0x181F2E, metalness: 0.95, roughness: 0.2 });
+            const hoodMesh = new THREE.Mesh(hoodGeo, hoodMat);
+            hoodMesh.position.set(0, 3.6, 0);
+            scene.add(hoodMesh);
+
+            // Exhaust Fan Rotor
+            fanRotorGroup = new THREE.Group();
+            for (let i = 0; i < 4; i++) {
+                const bladeGeo = new THREE.BoxGeometry(0.8, 0.02, 0.2);
+                const bladeMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, metalness: 0.85 });
+                const blade = new THREE.Mesh(bladeGeo, bladeMat);
+                blade.rotation.y = (Math.PI / 2) * i;
+                fanRotorGroup.add(blade);
+            }
+            fanRotorGroup.position.set(0, 3.4, 0);
+            scene.add(fanRotorGroup);
+
+            animateCooktop();
+        }
+
+        let timeOffset = 0;
+        function animateCooktop() {
+            requestAnimationFrame(animateCooktop);
+            timeOffset += 0.015;
+
+            if (scene) scene.position.y = Math.sin(timeOffset) * 0.035;
+
+            if (ringGroupA && ringGroupB) {
+                ringGroupA.children[0].rotation.z += 0.012;
+                ringGroupA.children[1].rotation.z -= 0.008;
+                ringGroupB.children[0].rotation.z += 0.012;
+                ringGroupB.children[1].rotation.z -= 0.008;
+            }
+
+            currentFanSpeed += (targetFanSpeed - currentFanSpeed) * 0.08;
+            if (fanRotorGroup) {
+                fanRotorGroup.rotation.y += (currentFanSpeed / 60) * 0.15;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ========================================================
+        // 4. SPOTLIGHT CARD CURSOR INTERACTION
+        // ========================================================
+        document.querySelectorAll('.spotlight-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // ========================================================
+        // 5. AUTOMATIC SCROLL-TRIGGERED SENSOR ASSEMBLY ENGINE
+        // ========================================================
+        function autoDockSensors() {
+            if (isAssembling || isDocked) return;
+            isAssembling = true;
+
+            const cards = document.querySelectorAll('.module-settle-card');
+            const statusBadge = document.getElementById('hardwareAssemblyStatus');
+            
+            if (statusBadge) {
+                statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-[#CCFF00] animate-ping"></span><span>DOCKING &amp; CALIBRATING SENSORS...</span>`;
+                statusBadge.className = "flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#CCFF00]/15 border border-[#CCFF00]/35 text-xs font-mono text-[#CCFF00]";
+            }
+
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('module-docked');
+                    card.classList.add('dock-slam-shockwave');
+                    playHeavyDockSlam(index);
+                    simulateMetricRoll(index);
+
+                    const tag = document.getElementById(`dockTag${index}`);
+                    if (tag) {
+                        tag.innerText = tag.innerText.replace("FLOATING", "DOCKED");
+                        tag.className = "text-[10px] font-mono text-[#CCFF00] bg-[#CCFF00]/20 px-2.5 py-0.5 rounded-full border border-[#CCFF00]/40 shadow-[0_0_10px_rgba(204,255,0,0.3)]";
+                    }
+
+                    setTimeout(() => card.classList.remove('dock-slam-shockwave'), 800);
+
+                    if (index === cards.length - 1) {
+                        setTimeout(() => {
+                            isAssembling = false;
+                            isDocked = true;
+                            if (statusBadge) {
+                                statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-[#CCFF00] animate-pulse"></span><span>ALL 6 SENSORS DOCKED &bull; CALIBRATED</span>`;
+                                statusBadge.className = "flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-xs font-mono text-[#CCFF00]";
+                            }
+                        }, 400);
+                    }
+                }, index * 140 + 50);
+            });
+        }
+
+        const assemblyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (!isDocked && !isAssembling) autoDockSensors();
+                } else {
+                    if (entry.boundingClientRect.top > window.innerHeight * 0.6) {
+                        const cards = document.querySelectorAll('.module-settle-card');
+                        cards.forEach((c, idx) => {
+                            c.classList.remove('module-docked', 'dock-slam-shockwave');
+                            const tag = document.getElementById(`dockTag${idx}`);
+                            if (tag) {
+                                tag.innerText = tag.innerText.replace("DOCKED", "FLOATING");
+                                tag.className = "text-[10px] font-mono text-slate-400 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10";
+                            }
+                        });
+                        isDocked = false;
+                        const statusBadge = document.getElementById('hardwareAssemblyStatus');
+                        if (statusBadge) {
+                            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>AUTONOMOUS BUS &bull; SCROLL TO DOCK</span>`;
+                            statusBadge.className = "flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/40 border border-white/10 text-xs font-mono text-slate-400";
+                        }
+                    }
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+
+        // Backup window scroll listener for instant, fail-safe trigger on scroll
+        window.addEventListener('scroll', () => {
+            if (isDocked || isAssembling) return;
+            const target = document.getElementById('hardware-inspection');
+            if (!target) return;
+            const rect = target.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.75 && rect.bottom >= 0) {
+                autoDockSensors();
+            }
+        }, { passive: true });
+
+        // ========================================================
+        // 6. CINEMATIC INSPECT SUBSYSTEMS WARP SEQUENCE
+        // ========================================================
+        async function triggerCinematicInspectSequence() {
+            getAudioContext();
+            playInspectWarpSound();
+
+            const laser = document.getElementById('laserScanBeam');
+            if (laser) {
+                laser.style.top = '0%';
+                laser.style.opacity = '1';
+                laser.style.transition = 'top 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.75s ease';
+                setTimeout(() => {
+                    laser.style.top = '100%';
+                    setTimeout(() => laser.style.opacity = '0', 550);
+                }, 40);
+            }
+
+            const target = document.getElementById('hardware-inspection');
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+
+            const cards = document.querySelectorAll('.module-settle-card');
+            cards.forEach(c => c.classList.remove('module-docked', 'dock-slam-shockwave'));
+            isDocked = false;
+            isAssembling = true;
+
+            const statusBadge = document.getElementById('hardwareAssemblyStatus');
+            if (statusBadge) {
+                statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-[#CCFF00] animate-ping"></span><span class="text-[#CCFF00] font-bold">HYPER-DIAGNOSTIC SCAN INITIATED...</span>`;
+                statusBadge.className = "flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#CCFF00]/15 border border-[#CCFF00]/40 text-xs font-mono";
+            }
+
+            setTimeout(() => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('module-docked');
+                        card.classList.add('dock-slam-shockwave');
+                        playHeavyDockSlam(index);
+                        simulateMetricRoll(index);
+
+                        const tag = document.getElementById(`dockTag${index}`);
+                        if (tag) {
+                            tag.innerText = tag.innerText.replace("EXPLODED", "LOCKED");
+                            tag.className = "text-[10px] font-mono text-[#CCFF00] bg-[#CCFF00]/20 px-2 py-0.5 rounded-full border border-[#CCFF00]/40 shadow-[0_0_10px_rgba(204,255,0,0.4)]";
+                        }
+
+                        setTimeout(() => card.classList.remove('dock-slam-shockwave'), 750);
+
+                        if (index === cards.length - 1) {
+                            setTimeout(() => {
+                                isAssembling = false;
+                                isDocked = true;
+                                if (statusBadge) {
+                                    statusBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-[#CCFF00] animate-pulse"></span><span class="text-[#CCFF00] font-bold">6/6 HARDWARE CORES LOCKED &bull; 0.12ms PARITY</span>`;
+                                    statusBadge.className = "flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-xs font-mono";
+                                }
+                            }, 350);
+                        }
+                    }, index * 125);
+                });
+            }, 320);
+        }
+
+        function simulateMetricRoll(index) {
+            if (index === 0) {
+                const gasEl = document.getElementById('gasNumericDisplay');
+                if (gasEl) {
+                    let roll = [0, 28, 54, 85];
+                    roll.forEach((val, i) => { setTimeout(() => gasEl.innerText = val, i * 50); });
+                }
+            } else if (index === 2) {
+                const tempEl = document.getElementById('tempMetric');
+                const humEl = document.getElementById('humMetric');
+                if (tempEl && humEl) {
+                    let tRoll = ["0°C", "14°C", "27°C"];
+                    let hRoll = ["0%", "24%", "48%"];
+                    tRoll.forEach((v, i) => { setTimeout(() => { tempEl.innerText = v; humEl.innerText = hRoll[i]; }, i * 60); });
+                }
+            }
+        }
+
+        // ========================================================
+        // 7. ADVANCED SOUND SYNTHESIZER (WEB AUDIO API)
+        // ========================================================
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        ['click', 'touchstart', 'keydown', 'scroll', 'pointerdown'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            }, { once: true });
+        });
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audioIcon');
+            const label = document.getElementById('audioLabel');
+            if (audioEnabled) {
+                icon.className = "w-3.5 h-3.5 text-[#CCFF00]";
+                label.innerText = "Audio: ON";
+                getAudioContext();
+            } else {
+                icon.className = "w-3.5 h-3.5 text-slate-500";
+                label.innerText = "Audio: OFF";
+            }
+        }
+
+        function playCinematicUnveilSound() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                // 1. Deep Sub-Bass Resonant Swell (45Hz rising to 110Hz then settling)
+                const bassOsc = ctx.createOscillator();
+                const bassGain = ctx.createGain();
+                bassOsc.type = 'sine';
+                bassOsc.frequency.setValueAtTime(45, now);
+                bassOsc.frequency.exponentialRampToValueAtTime(110, now + 0.6);
+                bassOsc.frequency.exponentialRampToValueAtTime(55, now + 1.8);
+
+                bassGain.gain.setValueAtTime(0.001, now);
+                bassGain.gain.linearRampToValueAtTime(0.32, now + 0.5);
+                bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+                bassOsc.connect(bassGain);
+                bassGain.connect(ctx.destination);
+                bassOsc.start(now);
+                bassOsc.stop(now + 1.8);
+
+                // 2. Crystalline Harmonic Chord Arpeggio (C Major 9: C5, E5, G5, B5, D6)
+                const notes = [523.25, 659.25, 783.99, 987.77, 1174.66];
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + 0.15 + idx * 0.08);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.setValueAtTime(0.12, now + 0.15 + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + 0.15 + idx * 0.08);
+                    osc.stop(now + 1.6);
+                });
+            } catch(e) {}
+        }
+
+        function playInspectWarpSound() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                const osc = ctx.createOscillator();
+                const oscGain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(90, now);
+                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.45);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(450, now);
+                filter.frequency.exponentialRampToValueAtTime(3600, now + 0.45);
+
+                oscGain.gain.setValueAtTime(0.2, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.48);
+
+                const subOsc = ctx.createOscillator();
+                const subGain = ctx.createGain();
+                subOsc.type = 'sine';
+                subOsc.frequency.setValueAtTime(95, now + 0.32);
+                subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.85);
+
+                subGain.gain.setValueAtTime(0.001, now);
+                subGain.gain.setValueAtTime(0.4, now + 0.32);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+                subOsc.connect(subGain);
+                subGain.connect(ctx.destination);
+                subOsc.start(now + 0.32);
+                subOsc.stop(now + 0.85);
+            } catch(e) {}
+        }
+
+        function playHeavyDockSlam(index = 0) {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                const clickOsc = ctx.createOscillator();
+                const clickGain = ctx.createGain();
+                clickOsc.type = 'triangle';
+                clickOsc.frequency.setValueAtTime(980, now);
+                clickOsc.frequency.exponentialRampToValueAtTime(130, now + 0.04);
+
+                clickGain.gain.setValueAtTime(0.38, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+                clickOsc.connect(clickGain);
+                clickGain.connect(ctx.destination);
+                clickOsc.start(now);
+                clickOsc.stop(now + 0.04);
+
+                const punch = ctx.createOscillator();
+                const punchGain = ctx.createGain();
+                punch.type = 'sine';
+                punch.frequency.setValueAtTime(115, now);
+                punch.frequency.exponentialRampToValueAtTime(45, now + 0.09);
+
+                punchGain.gain.setValueAtTime(0.3, now);
+                punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                punch.connect(punchGain);
+                punchGain.connect(ctx.destination);
+                punch.start(now);
+                punch.stop(now + 0.09);
+
+                const chordChime = ctx.createOscillator();
+                const chordGain = ctx.createGain();
+                const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+                const freq = notes[index % notes.length];
+
+                chordChime.type = 'sine';
+                chordChime.frequency.setValueAtTime(freq, now + 0.01);
+                chordChime.frequency.exponentialRampToValueAtTime(freq * 0.98, now + 0.18);
+
+                chordGain.gain.setValueAtTime(0.18, now + 0.01);
+                chordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                chordChime.connect(chordGain);
+                chordGain.connect(ctx.destination);
+                chordChime.start(now + 0.01);
+                chordChime.stop(now + 0.18);
+            } catch(e) {}
+        }
+
+        function playRelayClick() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(750, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.025);
+
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.025);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.025);
+            } catch (e) {}
+        }
+
+        function playSmsChime() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.setValueAtTime(880, now + 0.08);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } catch(e) {}
+        }
+
+        // ========================================================
+        // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION
+        // ========================================================
+        function evalFsm() {
+            const prev = systemState;
+            if (flameDetected) {
+                systemState = 2; // Fire
+            } else if (gasAdc > 400) {
+                systemState = 1; // Gas
+            } else {
+                systemState = 0; // Safe
+            }
+
+            if (systemState !== prev) {
+                playRelayClick();
+                playSmsChime();
+            }
+            syncUi();
+        }
+
+        function syncUi() {
+            const statePill = document.getElementById('masterStatePill');
+            const stateText = document.getElementById('masterStateText');
+            const vignette = document.getElementById('emergencyVignette');
+
+            const t3Dot = document.getElementById('threejsDot');
+            const t3Label = document.getElementById('threejsLabel');
+            const hoodRpm = document.getElementById('hoodRpmLabel');
+            const solenoid = document.getElementById('solenoidLabel');
+
+            const gasPill = document.getElementById('gasStatusPill');
+            const gasNum = document.getElementById('gasNumericDisplay');
+            const gasRing = document.getElementById('gasFluidRing');
+            const gasHalo = document.getElementById('gasHaloWrapper');
+
+            const lensRing = document.getElementById('opticalLensRing');
+            const lensIcon = document.getElementById('flameStatusIcon');
+            const lensLabel = document.getElementById('flameStatusLabel');
+
+            const fanLabel = document.getElementById('fanRelayLabel');
+            const fanRocker = document.getElementById('fanRockerSwitch');
+            const pumpLabel = document.getElementById('pumpRelayLabel');
+            const pumpRocker = document.getElementById('pumpRockerSwitch');
+            const interlockBox = document.getElementById('interlockNoteBox');
+
+            const oledText = document.getElementById('oledScreenText');
+            const oledRowA = document.getElementById('lcdRowA');
+            const oledRowB = document.getElementById('lcdRowB');
+            const oledMode = document.getElementById('lcdStateMode');
+
+            const phoneFrame = document.getElementById('phoneMockupFrame');
+            const notifBadge = document.getElementById('notifIconBadge');
+            const notifTitle = document.getElementById('notifSenderTitle');
+            const notifBody = document.getElementById('notifBodyText');
+
+            gasNum.innerText = gasAdc;
+            const ringOffset = 238.7 - (gasAdc / 1023) * 238.7;
+            gasRing.style.strokeDashoffset = ringOffset;
+
+            oledText.classList.remove('oled-state-gas', 'oled-state-fire');
+            vignette.className = "";
+
+            if (systemState === 2) {
+                vignette.className = "vignette-fire";
+                statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-xs font-mono font-bold tracking-wider text-rose-400 animate-pulse";
+                stateText.innerText = "CRITICAL &bull; FIRE DETECTED";
+
+                t3Dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping";
+                t3Label.innerText = "Combustion Alert &bull; Fan Locked";
+                targetFanSpeed = 0;
+                hoodRpm.innerText = "0 RPM (INTERLOCK)";
+                hoodRpm.className = "text-rose-400 font-medium text-sm";
+                solenoid.innerText = "ACTIVE (ENERGIZED)";
+                solenoid.className = "text-rose-400 font-medium text-sm";
+
+                if (burnerA && burnerB) {
+                    burnerA.material.color.setHex(0xF43F5E);
+                    burnerA.material.emissive.setHex(0xF43F5E);
+                    burnerB.material.color.setHex(0xF43F5E);
+                    burnerB.material.emissive.setHex(0xF43F5E);
+                }
+
+                if (ringGroupA && ringGroupB) {
+                    ringGroupA.children.forEach(r => r.material.color.setHex(0xF43F5E));
+                    ringGroupB.children.forEach(r => r.material.color.setHex(0xF43F5E));
+                }
+
+                if (genParticleSystem && genParticleSystem.material) {
+                    genParticleSystem.material.color.setHex(0xF43F5E);
+                }
+
+                gasPill.innerText = "! COMBUSTION ACTIVE !";
+                gasPill.className = "text-rose-400 font-medium";
+
+                lensRing.style.borderColor = "#F43F5E";
+                lensRing.style.boxShadow = "0 0 25px rgba(244, 63, 94, 0.4)";
+                lensIcon.className = "w-8 h-8 text-rose-400 animate-pulse";
+                lensLabel.innerText = "! FLAME DETECTED !";
+                lensLabel.className = "absolute bottom-3 text-[11px] font-mono text-rose-400 tracking-wider font-bold";
+
+                fanLabel.innerText = "LOCKED OFF"; fanLabel.className = "text-xs font-mono text-rose-400 font-semibold";
+                fanRocker.className = "metal-rocker";
+                pumpLabel.innerText = "ENERGIZED"; pumpLabel.className = "text-xs font-mono text-rose-400 font-bold";
+                pumpRocker.className = "metal-rocker active";
+
+                interlockBox.innerHTML = "<span class='text-rose-400 font-bold'>⚠️ Safety Interlock Engaged: Oxygen Starvation Active. Fan strictly forced off.</span>";
+
+                oledText.classList.add('oled-state-fire');
+                oledRowA.innerText = "! FIRE DETECTED !";
+                oledRowB.innerText = "SPRINKLER ON    ";
+                oledMode.innerText = "Crimson Priority";
+
+                phoneFrame.classList.add('phone-shake');
+                setTimeout(() => phoneFrame.classList.remove('phone-shake'), 600);
+                notifBadge.className = "w-2 h-2 rounded-full bg-rose-500 animate-ping";
+                notifTitle.innerText = "🚨 FIRE EMERGENCY ALERT";
+                notifTitle.className = "text-[10px] font-bold text-rose-400 uppercase";
+                notifBody.innerText = "CRITICAL: Optical Flame Detected! Solenoid Sprinkler ENERGIZED. Fan forced OFF.";
+
+            } else if (systemState === 1) {
+                vignette.className = "vignette-gas";
+                statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-mono font-bold tracking-wider text-amber-400 animate-pulse";
+                stateText.innerText = "WARNING &bull; GAS LEAKAGE";
+
+                t3Dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
+                t3Label.innerText = "Vapor Extraction &bull; 2800 RPM";
+                targetFanSpeed = 2800;
+                hoodRpm.innerText = "2800 RPM (HIGH)";
+                hoodRpm.className = "text-amber-400 font-medium text-sm";
+                solenoid.innerText = "DE-ENERGIZED";
+                solenoid.className = "text-slate-400 font-medium text-sm";
+
+                if (burnerA && burnerB) {
+                    burnerA.material.color.setHex(0xF59E0B);
+                    burnerA.material.emissive.setHex(0xF59E0B);
+                    burnerB.material.color.setHex(0xF59E0B);
+                    burnerB.material.emissive.setHex(0xF59E0B);
+                }
+
+                if (ringGroupA && ringGroupB) {
+                    ringGroupA.children.forEach(r => r.material.color.setHex(0xF59E0B));
+                    ringGroupB.children.forEach(r => r.material.color.setHex(0xF59E0B));
+                }
+
+                if (genParticleSystem && genParticleSystem.material) {
+                    genParticleSystem.material.color.setHex(0xF59E0B);
+                }
+
+                gasPill.innerText = `! LEAK ALERT [${gasAdc}] !`;
+                gasPill.className = "text-amber-400 font-medium";
+
+                lensRing.style.borderColor = "rgba(255,255,255,0.1)";
+                lensRing.style.boxShadow = "none";
+                lensIcon.className = "w-8 h-8 text-slate-400";
+                lensLabel.innerText = "OPTICAL STANDBY";
+                lensLabel.className = "absolute bottom-3 text-[11px] font-mono text-slate-400 tracking-wider";
+
+                fanLabel.innerText = "ENERGIZED"; fanLabel.className = "text-xs font-mono text-amber-400 font-bold";
+                fanRocker.className = "metal-rocker active";
+                pumpLabel.innerText = "CUT OFF"; pumpLabel.className = "text-xs font-mono text-slate-400 font-semibold";
+                pumpRocker.className = "metal-rocker";
+
+                interlockBox.innerText = "Exhaust System Engaged: Dissipating combustible vapor.";
+
+                oledText.classList.add('oled-state-gas');
+                oledRowA.innerText = "! GAS LEAKAGE ! ";
+                oledRowB.innerText = "EXHAUST FAN ON  ";
+                oledMode.innerText = "Amber Alert";
+
+                phoneFrame.classList.add('phone-shake');
+                setTimeout(() => phoneFrame.classList.remove('phone-shake'), 600);
+                notifBadge.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+                notifTitle.innerText = "⚠️ GAS LEAKAGE ALERT";
+                notifTitle.className = "text-[10px] font-bold text-amber-400 uppercase";
+                notifBody.innerText = `WARNING: Gas level ${gasAdc} ADC exceeded threshold 400! Extractor fan forced ON.`;
+
+            } else {
+                statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-xs font-mono font-medium tracking-wider text-[#CCFF00]";
+                stateText.innerText = "STANDBY &bull; NOMINAL";
+
+                t3Dot.className = "w-1.5 h-1.5 rounded-full bg-[#CCFF00]";
+                t3Label.innerText = "Kinetic Cooktop &bull; Holographic CAD";
+                targetFanSpeed = 0;
+                hoodRpm.innerText = "0 RPM (IDLE)";
+                hoodRpm.className = "text-white font-medium text-sm";
+                solenoid.innerText = "DE-ENERGIZED";
+                solenoid.className = "text-slate-400 font-medium text-sm";
+
+                if (burnerA && burnerB) {
+                    burnerA.material.color.setHex(0xE2E8F0);
+                    burnerA.material.emissive.setHex(0x1E293B);
+                    burnerB.material.color.setHex(0xE2E8F0);
+                    burnerB.material.emissive.setHex(0x1E293B);
+                }
+
+                if (ringGroupA && ringGroupB) {
+                    ringGroupA.children.forEach(r => r.material.color.setHex(0xCCFF00));
+                    ringGroupB.children.forEach(r => r.material.color.setHex(0xCCFF00));
+                }
+
+                if (genParticleSystem && genParticleSystem.material) {
+                    genParticleSystem.material.color.setHex(genPalette[genColorIndex % genPalette.length]);
+                }
+
+                gasPill.innerText = `SAFE [${gasAdc} ADC]`;
+                gasPill.className = "text-[#CCFF00] font-medium";
+
+                lensRing.style.borderColor = "rgba(255,255,255,0.1)";
+                lensRing.style.boxShadow = "none";
+                lensIcon.className = "w-8 h-8 text-slate-400";
+                lensLabel.innerText = "OPTICAL STANDBY";
+                lensLabel.className = "absolute bottom-3 text-[11px] font-mono text-slate-400 tracking-wider";
+
+                fanLabel.innerText = "CUT OFF"; fanLabel.className = "text-xs font-mono text-slate-400 font-semibold";
+                fanRocker.className = "metal-rocker";
+                pumpLabel.innerText = "CUT OFF"; pumpLabel.className = "text-xs font-mono text-slate-400 font-semibold";
+                pumpRocker.className = "metal-rocker";
+
+                interlockBox.innerText = "Interlock System: Fan active on gas; strictly locked during fire.";
+
+                if (Date.now() - lastLcdRecalibration < 650) {
+                    oledRowA.innerText = "RECALIBRATING...";
+                    oledRowB.innerText = "I2C BUS READY   ";
+                } else {
+                    oledRowA.innerText = "T:27°C  H:48%    ";
+                    oledRowB.innerText = `Gas:${gasAdc} [Safe]   `;
+                }
+                oledMode.innerText = "OLED Standby";
+
+                notifBadge.className = "w-2 h-2 rounded-full bg-[#CCFF00]";
+                notifTitle.innerText = "SAFETY-FI SENTINEL";
+                notifTitle.className = "text-[10px] font-bold text-slate-300 uppercase";
+                notifBody.innerText = "System Standby: Nominal climate, zero combustion detected.";
+            }
+        }
+
+        // Controls
+        function onGasSliderChange(v) {
+            gasAdc = parseInt(v);
+            evalFsm();
+        }
+
+        function toggleCombustionTrigger() {
+            flameDetected = !flameDetected;
+            evalFsm();
+        }
+
+        function setSystemState(target) {
+            if (target === 2) {
+                flameDetected = true;
+            } else if (target === 1) {
+                flameDetected = false;
+                gasAdc = 650;
+                document.getElementById('gasSlider').value = 650;
+            } else {
+                flameDetected = false;
+                gasAdc = 85;
+                document.getElementById('gasSlider').value = 85;
+            }
+            evalFsm();
+        }
+
+        function toggleTactileMute() {
+            buzzerMuted = !buzzerMuted;
+            const icon = document.getElementById('muteIcon');
+            const lbl = document.getElementById('muteLabel');
+            if (buzzerMuted) {
+                icon.className = "w-4 h-4 text-slate-500";
+                lbl.innerText = "MUTED (PIN 12 LOW)";
+                lbl.className = "text-amber-400 font-semibold";
+            } else {
+                icon.className = "w-4 h-4 text-emerald-400";
+                lbl.innerText = "Mute Latch (Pin 12)";
+                lbl.className = "";
+            }
+        }
+
+        function manualToggleRelay(relay) {
+            playRelayClick();
+            if (relay === 'fan' && systemState === 2) {
+                alert("SAFETY INTERLOCK: Exhaust fan is locked out during active combustion to prevent oxygenating flames.");
+                return;
+            }
+            if (relay === 'fan') {
+                document.getElementById('fanRockerSwitch').classList.toggle('active');
+            } else {
+                document.getElementById('pumpRockerSwitch').classList.toggle('active');
+            }
+        }
+
+        function dispatchSmsTest() {
+            const phone = document.getElementById('smsPhoneInput').value;
+            const notifTitle = document.getElementById('notifSenderTitle');
+            const notifBody = document.getElementById('notifBodyText');
+            const phoneFrame = document.getElementById('phoneMockupFrame');
+
+            playSmsChime();
+            phoneFrame.classList.add('phone-shake');
+            setTimeout(() => phoneFrame.classList.remove('phone-shake'), 600);
+
+            notifTitle.innerText = `SMS TO ${phone}`;
+            notifTitle.className = "text-[10px] font-bold text-[#CCFF00] uppercase";
+            notifBody.innerText = "TEST DISPATCH: [SAFETY-FI 96X] Autonomous cellular handshake confirmed OK via SIM800L!";
+        }
+
+        // Circuit Webbing
+        function projectCircuitFiber(rowId, cardId) {
+            const row = document.getElementById(rowId);
+            const card = document.getElementById(cardId);
+            const path = document.getElementById('activeFiberPath');
+            if (!row || !card || !path) return;
+
+            const rRect = row.getBoundingClientRect();
+            const cRect = card.getBoundingClientRect();
+            const scrollY = window.scrollY;
+            const scrollX = window.scrollX;
+
+            const startX = rRect.left + scrollX + 35;
+            const startY = rRect.top + scrollY + (rRect.height / 2);
+            const endX = cRect.left + scrollX + (cRect.width / 2);
+            const endY = cRect.bottom + scrollY;
+
+            const midY = (startY + endY) / 2;
+            const d = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+
+            path.setAttribute('d', d);
+            path.classList.remove('opacity-0');
+            path.classList.add('opacity-100');
+
+            card.style.borderColor = "#CCFF00";
+            card.style.boxShadow = "0 30px 60px -15px rgba(0, 0, 0, 0.95), 0 0 30px rgba(204, 255, 0, 0.3)";
+        }
+
+        function dismissCircuitFiber() {
+            const path = document.getElementById('activeFiberPath');
+            if (path) {
+                path.classList.remove('opacity-100');
+                path.classList.add('opacity-0');
+            }
+            document.querySelectorAll('.spotlight-card').forEach(c => {
+                c.style.borderColor = "";
+                c.style.boxShadow = "";
+            });
+        }
+
+        // Web Serial
+        async function toggleWebSerialDirect() {
+            if (!("serial" in navigator)) {
+                alert("Web Serial is supported in Google Chrome, Edge, and Opera.");
+                return;
+            }
+            try {
+                webSerialPort = await navigator.serial.requestPort();
+                await webSerialPort.open({ baudRate: 9600 });
+                document.getElementById('serialIngressLabel').innerText = "Serial Active (9600)";
+                readSerialLoop();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        async function readSerialLoop() {
+            const dec = new TextDecoderStream();
+            webSerialPort.readable.pipeTo(dec.writable);
+            const reader = dec.readable.getReader();
+            let buf = "";
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buf += value;
+                let lines = buf.split("\n");
+                buf = lines.pop();
+                for (let l of lines) {
+                    l = l.trim();
+                    if (l.startsWith("{") && l.endsWith("}")) {
+                        try {
+                            const p = JSON.parse(l);
+                            if ("gas" in p) gasAdc = parseInt(p.gas);
+                            if ("flame" in p) flameDetected = Boolean(p.flame);
+                            evalFsm();
+                        } catch (err) {}
+                    }
+                }
+            }
+        }
+
+        // Polling fallback
+        setInterval(async () => {
+            if (webSerialPort) return;
+            try {
+                const res = await fetch('/api/data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && "gas" in data) {
+                        gasAdc = parseInt(data.gas);
+                        flameDetected = Boolean(data.flame);
+                        evalFsm();
+                    }
+                }
+            } catch (e) {}
+        }, 1000);
+
+        setInterval(() => {
+            if (systemState === 0) {
+                lastLcdRecalibration = Date.now();
+                evalFsm();
+                setTimeout(evalFsm, 700);
+            }
+        }, 10000);
+
+        setInterval(() => {
+            const d = new Date();
+            const h = String(d.getHours()).padStart(2, '0');
+            const m = String(d.getMinutes()).padStart(2, '0');
+            const el = document.getElementById('phoneSimTime');
+            if (el) el.innerText = `${h}:${m}`;
+        }, 1000);
+
+        function initDashboard() {
+            initThreeJsCooktop();
+            initGenerativeStudio();
+            evalFsm();
+
+            const inspectionSection = document.getElementById('hardware-inspection');
+            if (inspectionSection) {
+                assemblyObserver.observe(inspectionSection);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initDashboard);
+        } else {
+            initDashboard();
+        }
+    </script>
+</body>
+</html>
