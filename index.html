@@ -476,6 +476,14 @@
                     <span class="sm:hidden">Serial</span>
                 </button>
 
+                <!-- Hardware Tri-Color Mini Cluster (Pins 3, 4, 5) -->
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/10" title="Hardware GPIO Status: Green (Pin 3), Blue (Pin 4), Red (Pin 5)">
+                    <span class="text-[9px] font-mono text-slate-500 uppercase tracking-wider">GPIO</span>
+                    <span id="miniLedGreen" title="Pin 3: Safe" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981] animate-pulse transition-all"></span>
+                    <span id="miniLedBlue" title="Pin 4: Gas" class="w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"></span>
+                    <span id="miniLedRed" title="Pin 5: Fire" class="w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"></span>
+                </div>
+
                 <!-- Master State Beacon -->
                 <div id="masterStatePill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-medium tracking-wider text-emerald-400">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -537,6 +545,50 @@
                     <button onclick="setSystemState(0)" class="px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">&bull; Normal (Safe)</button>
                     <button onclick="setSystemState(1)" class="px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition">&bull; Gas Leak (&gt;400)</button>
                     <button onclick="setSystemState(2)" class="px-3 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">&bull; Fire Hazard</button>
+                </div>
+
+                <!-- Hardware Tri-Color Status Array (Pins 3, 4, 5) -->
+                <div class="p-4 rounded-2xl border border-white/10 bg-[#0C0F17]/90 backdrop-blur-xl space-y-3 mt-3 shadow-2xl">
+                    <div class="flex items-center justify-between text-xs font-mono border-b border-white/5 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></span>
+                            <span class="text-[11px] font-bold text-slate-200 tracking-wider uppercase">HARDWARE STATUS LED ARRAY</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-mono">ATmega328P PINS 3, 4, 5</span>
+                    </div>
+
+                    <!-- 3 Industrial LED Bezel Housings -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- 1. GREEN LED (PIN 3: SAFE STANDBY) -->
+                        <div id="ledPanelGreen" class="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-all duration-300">
+                            <div class="relative w-8 h-8 rounded-full flex items-center justify-center mb-1.5">
+                                <span id="ledRingGreen" class="absolute inset-0 rounded-full bg-emerald-400 opacity-60 animate-ping"></span>
+                                <span id="ledCoreGreen" class="relative w-5 h-5 rounded-full bg-emerald-400 shadow-[0_0_18px_#10B981,0_0_6px_#ffffff]"></span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">GREEN</span>
+                            <span id="ledStateTextGreen" class="text-[9px] font-mono text-emerald-400 font-semibold">NORMAL (PIN 3)</span>
+                        </div>
+
+                        <!-- 2. BLUE LED (PIN 4: GAS LEAK) -->
+                        <div id="ledPanelBlue" class="flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300">
+                            <div class="relative w-8 h-8 rounded-full flex items-center justify-center mb-1.5">
+                                <span id="ledRingBlue" class="absolute inset-0 rounded-full bg-cyan-400 opacity-0"></span>
+                                <span id="ledCoreBlue" class="relative w-5 h-5 rounded-full bg-slate-800"></span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">BLUE</span>
+                            <span id="ledStateTextBlue" class="text-[9px] font-mono text-slate-500">STANDBY (OFF)</span>
+                        </div>
+
+                        <!-- 3. RED LED (PIN 5: FIRE HAZARD) -->
+                        <div id="ledPanelRed" class="flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300">
+                            <div class="relative w-8 h-8 rounded-full flex items-center justify-center mb-1.5">
+                                <span id="ledRingRed" class="absolute inset-0 rounded-full bg-rose-500 opacity-0"></span>
+                                <span id="ledCoreRed" class="relative w-5 h-5 rounded-full bg-slate-800"></span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">RED</span>
+                            <span id="ledStateTextRed" class="text-[9px] font-mono text-slate-500">STANDBY (OFF)</span>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -2099,19 +2151,127 @@
         }
 
         // ========================================================
-        // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION
+        // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION (5S LATCH)
         // ========================================================
+        const HAZARD_MIN_HOLD_MS = 5000; // Hold hazard on dashboard for at least 5 seconds!
+        let latchedHazardState = 0;
+        let latchedHazardUntil = 0;
+
+        function updateStatusLeds(st) {
+            const pGreen = document.getElementById('ledPanelGreen');
+            const rGreen = document.getElementById('ledRingGreen');
+            const cGreen = document.getElementById('ledCoreGreen');
+            const tGreen = document.getElementById('ledStateTextGreen');
+
+            const pBlue = document.getElementById('ledPanelBlue');
+            const rBlue = document.getElementById('ledRingBlue');
+            const cBlue = document.getElementById('ledCoreBlue');
+            const tBlue = document.getElementById('ledStateTextBlue');
+
+            const pRed = document.getElementById('ledPanelRed');
+            const rRed = document.getElementById('ledRingRed');
+            const cRed = document.getElementById('ledCoreRed');
+            const tRed = document.getElementById('ledStateTextRed');
+
+            const miniG = document.getElementById('miniLedGreen');
+            const miniB = document.getElementById('miniLedBlue');
+            const miniR = document.getElementById('miniLedRed');
+
+            if (st === 2) {
+                // State 2: FIRE HAZARD -> RED ON, Green & Blue OFF
+                if (pGreen) { pGreen.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-0"; }
+                if (cGreen) { cGreen.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tGreen) { tGreen.innerText = "STANDBY (OFF)"; tGreen.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (pBlue) { pBlue.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-0"; }
+                if (cBlue) { cBlue.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tBlue) { tBlue.innerText = "STANDBY (OFF)"; tBlue.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (pRed) { pRed.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-rose-500/60 bg-rose-500/20 shadow-[0_0_30px_rgba(244,63,94,0.45)] transition-all duration-300 animate-pulse"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-80 animate-ping"; }
+                if (cRed) { cRed.className = "relative w-5 h-5 rounded-full bg-rose-500 shadow-[0_0_22px_#F43F5E,0_0_8px_#ffffff]"; }
+                if (tRed) { tRed.innerText = "FIRE ACTIVE (ON)"; tRed.className = "text-[9px] font-mono text-rose-400 font-bold"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_#F43F5E] animate-pulse transition-all"; }
+
+            } else if (st === 1) {
+                // State 1: GAS LEAK -> BLUE ON, Green & Red OFF
+                if (pGreen) { pGreen.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-0"; }
+                if (cGreen) { cGreen.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tGreen) { tGreen.innerText = "STANDBY (OFF)"; tGreen.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (pBlue) { pBlue.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-cyan-500/60 bg-cyan-500/20 shadow-[0_0_30px_rgba(56,189,248,0.45)] transition-all duration-300 animate-pulse"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-80 animate-ping"; }
+                if (cBlue) { cBlue.className = "relative w-5 h-5 rounded-full bg-cyan-400 shadow-[0_0_22px_#38BDF8,0_0_8px_#ffffff]"; }
+                if (tBlue) { tBlue.innerText = "GAS ACTIVE (ON)"; tBlue.className = "text-[9px] font-mono text-cyan-400 font-bold"; }
+
+                if (pRed) { pRed.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-0"; }
+                if (cRed) { cRed.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tRed) { tRed.innerText = "STANDBY (OFF)"; tRed.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#38BDF8] animate-pulse transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+
+            } else {
+                // State 0: SAFE STANDBY -> GREEN ON, Blue & Red OFF
+                if (pGreen) { pGreen.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-60 animate-ping"; }
+                if (cGreen) { cGreen.className = "relative w-5 h-5 rounded-full bg-emerald-400 shadow-[0_0_18px_#10B981,0_0_6px_#ffffff]"; }
+                if (tGreen) { tGreen.innerText = "NORMAL (PIN 3)"; tGreen.className = "text-[9px] font-mono text-emerald-400 font-semibold"; }
+
+                if (pBlue) { pBlue.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-0"; }
+                if (cBlue) { cBlue.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tBlue) { tBlue.innerText = "STANDBY (OFF)"; tBlue.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (pRed) { pRed.className = "flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-0"; }
+                if (cRed) { cRed.className = "relative w-5 h-5 rounded-full bg-slate-800"; }
+                if (tRed) { tRed.innerText = "STANDBY (OFF)"; tRed.className = "text-[9px] font-mono text-slate-500"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10B981] animate-pulse transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+            }
+        }
+
         function evalFsm(explicitState = null) {
             const prev = systemState;
-            if (explicitState !== null && explicitState !== undefined) {
-                systemState = explicitState;
-                flameDetected = (systemState === 2);
-            } else if (flameDetected) {
-                systemState = 2; // Fire
-            } else if (gasAdc > 400) {
-                systemState = 1; // Gas
+            const now = Date.now();
+
+            let rawTrigger = 0;
+            if (explicitState === 2 || flameDetected) {
+                rawTrigger = 2;
+            } else if (explicitState === 1 || gasAdc > 400) {
+                rawTrigger = 1;
+            }
+
+            // 5-second latch hold: extend latch whenever hazard is actively detected
+            if (rawTrigger === 2) {
+                latchedHazardState = 2;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+            } else if (rawTrigger === 1) {
+                if (latchedHazardState !== 2 || now >= latchedHazardUntil) {
+                    latchedHazardState = 1;
+                    latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+                }
+            }
+
+            // Check if 5-second latch hold is still active
+            if (now < latchedHazardUntil) {
+                systemState = latchedHazardState;
+                if (systemState === 2) flameDetected = true;
             } else {
-                systemState = 0; // Safe
+                latchedHazardState = 0;
+                systemState = rawTrigger;
+                if (systemState === 0) flameDetected = false;
             }
 
             if (systemState !== prev) {
@@ -2167,11 +2327,14 @@
 
             oledText.classList.remove('oled-state-gas', 'oled-state-fire');
             vignette.className = "";
+            updateStatusLeds(systemState);
 
             if (systemState === 2) {
                 vignette.className = "vignette-fire";
                 statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-xs font-mono font-bold tracking-wider text-rose-400 animate-pulse";
-                stateText.innerText = "CRITICAL &bull; FIRE DETECTED";
+                const now = Date.now();
+                const holdSec = latchedHazardUntil > now ? Math.ceil((latchedHazardUntil - now) / 1000) : 0;
+                stateText.innerText = holdSec > 0 ? `CRITICAL • FIRE DETECTED [${holdSec}s]` : "CRITICAL • FIRE DETECTED";
 
                 t3Dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping";
                 t3Label.innerText = "Combustion Alert &bull; Fan Locked";
@@ -2228,7 +2391,9 @@
             } else if (systemState === 1) {
                 vignette.className = "vignette-gas";
                 statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-mono font-bold tracking-wider text-amber-400 animate-pulse";
-                stateText.innerText = "WARNING &bull; GAS LEAKAGE";
+                const now = Date.now();
+                const holdSec = latchedHazardUntil > now ? Math.ceil((latchedHazardUntil - now) / 1000) : 0;
+                stateText.innerText = holdSec > 0 ? `WARNING • GAS LEAKAGE [${holdSec}s]` : "WARNING • GAS LEAKAGE";
 
                 t3Dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
                 t3Label.innerText = "Vapor Extraction &bull; 2800 RPM";
@@ -2355,22 +2520,36 @@
 
         function toggleCombustionTrigger() {
             flameDetected = !flameDetected;
+            if (flameDetected) {
+                latchedHazardState = 2;
+                latchedHazardUntil = Date.now() + HAZARD_MIN_HOLD_MS;
+            } else {
+                latchedHazardState = 0;
+                latchedHazardUntil = 0;
+            }
             evalFsm();
         }
 
         function setSystemState(target) {
+            const now = Date.now();
             if (target === 2) {
                 flameDetected = true;
+                latchedHazardState = 2;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
             } else if (target === 1) {
                 flameDetected = false;
                 gasAdc = 650;
                 document.getElementById('gasSlider').value = 650;
+                latchedHazardState = 1;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
             } else {
                 flameDetected = false;
                 gasAdc = 85;
                 document.getElementById('gasSlider').value = 85;
+                latchedHazardState = 0;
+                latchedHazardUntil = 0;
             }
-            evalFsm();
+            evalFsm(target);
         }
 
         function toggleTactileMute() {

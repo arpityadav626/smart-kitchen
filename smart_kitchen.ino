@@ -47,7 +47,8 @@
 #define GAS_THRESHOLD      400   // Normal <= 400, Gas Leak > 400
 #define RELAY_ACTIVE       LOW   // Active-LOW Trigger (GND ON)
 #define RELAY_INACTIVE     HIGH  // Relay OFF (5V OFF)
-#define PUMP_MIN_DURATION  3000  // Pump runs for at least 3 seconds to extinguish fire
+#define PUMP_MIN_DURATION  5000  // Pump runs for at least 5 seconds to extinguish fire
+#define GAS_MIN_DURATION   5000  // Exhaust fan runs for at least 5 seconds on gas detection
 
 // ⚠️ EMERGENCY DISPATCH PHONE NUMBER (Arpit Yadav):
 const char EMERGENCY_PHONE[] = "+916387834374";
@@ -75,7 +76,8 @@ int gasVal = 85;
 unsigned long lastFastCheck = 0;       // 100ms ultra-fast sensor & actuator loop
 unsigned long lastTelemetryStream = 0; // 1000ms web stream
 unsigned long lastDhtRead = 0;         // 2000ms DHT sensor read
-unsigned long lastFireSeenTime = 0;    // 3-second minimum pump runtime latch
+unsigned long lastFireSeenTime = 0;    // 5-second minimum pump runtime latch
+unsigned long lastGasSeenTime = 0;     // 5-second minimum fan runtime latch
 
 unsigned long lastFireSmsTime = 0;     // SMS rate limiting (30s cooldown)
 unsigned long lastGasSmsTime = 0;
@@ -169,16 +171,24 @@ void loop() {
       lastFireSeenTime = currentMillis;
     }
 
-    // Check if flame is active OR within the 3-second sprinkler run latch
+    // Latch timestamp if gas leak detected right now
+    if (gasVal > GAS_THRESHOLD) {
+      lastGasSeenTime = currentMillis;
+    }
+
+    // Check if flame is active OR within the 5-second sprinkler run latch
     bool fireActiveOrLatched = (flameDetected || ((currentMillis - lastFireSeenTime) < PUMP_MIN_DURATION && lastFireSeenTime > 0));
 
+    // Check if gas is active OR within the 5-second exhaust fan run latch
+    bool gasActiveOrLatched = (gasVal > GAS_THRESHOLD || ((currentMillis - lastGasSeenTime) < GAS_MIN_DURATION && lastGasSeenTime > 0));
+
     // ====================================================================
-    // FINITE STATE MACHINE WITH 3-SECOND PUMP LATCH & AUTO-RESET
+    // FINITE STATE MACHINE WITH 5-SECOND PUMP/FAN LATCH & AUTO-RESET
     // ====================================================================
 
     SystemState previousState = currentState;
 
-    // CASE 1: ACTIVE FIRE HAZARD (Runs for minimum 3 seconds)
+    // CASE 1: ACTIVE FIRE HAZARD (Runs for minimum 5 seconds)
     if (fireActiveOrLatched) {
       currentState = STATE_FIRE_EMERGENCY;
 
@@ -207,8 +217,8 @@ void loop() {
       }
     }
 
-    // CASE 2: GAS / SMOKE LEAKAGE HAZARD
-    else if (gasVal > GAS_THRESHOLD) {
+    // CASE 2: GAS / SMOKE LEAKAGE HAZARD (Runs for minimum 5 seconds)
+    else if (gasActiveOrLatched) {
       currentState = STATE_GAS_LEAK;
 
       // Actuators: Exhaust Fan ON, Pump OFF

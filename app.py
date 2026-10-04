@@ -120,23 +120,38 @@ def trigger_sms_dispatch(event_type: str, message_body: str):
         if len(state["recent_logs"]) > 30:
             state["recent_logs"].pop(0)
 
+HOLD_DURATION = 5.0 # Minimum 5-second alarm latch hold
+last_fire_seen = 0.0
+last_gas_seen = 0.0
+
 def update_fsm_logic(hw_state=None):
-    """Calculates or applies FSM State and outputs based on sensor values or hardware state"""
+    """Calculates or applies FSM State and outputs based on sensor values or hardware state with 5-second latch"""
+    global last_fire_seen, last_gas_seen
+    now = time.time()
     gas = state["gas"]
     flame = state["flame"]
     prev_fsm = state["fsm_state"]
 
-    if hw_state is not None:
-        target_fsm = int(hw_state)
-    elif flame:
+    is_fire = (hw_state == 2) or flame
+    is_gas = (hw_state == 1) or (gas > 400)
+
+    if is_fire:
+        last_fire_seen = now
+    if is_gas:
+        last_gas_seen = now
+
+    fire_active = is_fire or ((now - last_fire_seen < HOLD_DURATION) and last_fire_seen > 0)
+    gas_active = is_gas or ((now - last_gas_seen < HOLD_DURATION) and last_gas_seen > 0)
+
+    if fire_active:
         target_fsm = 2
-    elif gas > 400:
+    elif gas_active:
         target_fsm = 1
     else:
         target_fsm = 0
 
     if target_fsm == 2:
-        # State 2: Fire Emergency
+        # State 2: Fire Emergency (Latched for at least 5 seconds)
         state["fsm_state"] = 2
         state["flame"] = True
         state["fsm_label"] = "FIRE_EMERGENCY"
@@ -329,26 +344,35 @@ async def set_port(request: Request):
 @app.post("/api/simulate")
 async def simulate_scenario(request: Request):
     """Allows web users to test FSM states directly from the interactive workbench"""
+    global last_fire_seen, last_gas_seen
     body = await request.json()
     scenario = body.get("scenario")
     with lock:
         if scenario == "safe":
+            last_fire_seen = 0.0
+            last_gas_seen = 0.0
             state["gas"] = 120
             state["flame"] = False
             state["buzzer_muted"] = False
             add_log("[SIMULATOR] Restored Normal Kitchen Parameters (Gas: 120 PPM, Flame: Safe)")
         elif scenario == "gas_leak":
+            last_gas_seen = time.time()
             state["gas"] = 650
             state["flame"] = False
-            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 650 PPM > Threshold 400)")
+            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 650 PPM > Threshold 400) - 5s Hold Active")
         elif scenario == "fire":
+            last_fire_seen = time.time()
             state["flame"] = True
-            add_log("[SIMULATOR] Simulated Optical Flame Detection (Pin 8 -> LOW)")
+            add_log("[SIMULATOR] Simulated Optical Flame Detection (Pin 8 -> LOW) - 5s Hold Active")
         elif scenario == "custom":
             if "gas" in body:
                 state["gas"] = int(body["gas"])
+                if state["gas"] > 400:
+                    last_gas_seen = time.time()
             if "flame" in body:
                 state["flame"] = bool(body["flame"])
+                if state["flame"]:
+                    last_fire_seen = time.time()
             if "temp" in body:
                 state["temperature"] = float(body["temp"])
             if "hum" in body:
