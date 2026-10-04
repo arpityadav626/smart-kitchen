@@ -248,7 +248,7 @@
             line-height: 1.45;
             transition: all 0.35s ease;
         }
-        .oled-state-gas { color: #FDE68A !important; text-shadow: 0 0 8px rgba(245, 158, 11, 0.85) !important; }
+        .oled-state-gas { color: #BAE6FD !important; text-shadow: 0 0 10px rgba(56, 189, 248, 0.95) !important; }
         .oled-state-fire { color: #FECDD3 !important; text-shadow: 0 0 8px rgba(244, 63, 94, 0.9) !important; }
 
         /* Smartphone Mockup HUD */
@@ -301,9 +301,9 @@
             animation: pulseVignette 1.8s infinite;
         }
         .vignette-gas {
-            background: radial-gradient(circle at center, transparent 40%, rgba(245, 158, 11, 0.18) 100%);
+            background: radial-gradient(circle at center, transparent 35%, rgba(14, 165, 233, 0.22) 70%, rgba(56, 189, 248, 0.40) 100%);
             opacity: 1 !important;
-            animation: pulseVignette 2.2s infinite;
+            animation: pulseVignette 2.0s infinite;
         }
         @keyframes pulseVignette {
             0%, 100% { opacity: 0.6; }
@@ -476,6 +476,14 @@
                     <span class="sm:hidden">Serial</span>
                 </button>
 
+                <!-- Hardware Tri-Color Mini Cluster (Pins 3, 4, 5) -->
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/10" title="Hardware GPIO Status: Green (Pin 3), Blue (Pin 4), Red (Pin 5)">
+                    <span class="text-[9px] font-mono text-slate-500 uppercase tracking-wider">GPIO</span>
+                    <span id="miniLedGreen" title="Pin 3: Safe" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981] animate-pulse transition-all"></span>
+                    <span id="miniLedBlue" title="Pin 4: Gas" class="w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"></span>
+                    <span id="miniLedRed" title="Pin 5: Fire" class="w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"></span>
+                </div>
+
                 <!-- Master State Beacon -->
                 <div id="masterStatePill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-medium tracking-wider text-emerald-400">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -535,10 +543,9 @@
                 <div class="pt-2 flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
                     <span class="text-slate-500 font-semibold">Simulate Hazards:</span>
                     <button onclick="setSystemState(0)" class="px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">&bull; Normal (Safe)</button>
-                    <button onclick="setSystemState(1)" class="px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition">&bull; Gas Leak (&gt;400)</button>
+                    <button onclick="setSystemState(1)" class="px-3 py-1 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition">&bull; Gas Leak (&gt;400)</button>
                     <button onclick="setSystemState(2)" class="px-3 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">&bull; Fire Hazard</button>
                 </div>
-
             </div>
 
             <!-- RIGHT COLUMN: THREE.JS 3D VIEWPORT WITH HOLOGRAPHIC RINGS -->
@@ -730,8 +737,8 @@
     <!-- ======================================================== -->
     <section id="hardware-inspection" class="relative z-30 max-w-7xl mx-auto px-6 sm:px-10 py-16 space-y-8">
         
-        <!-- Header with Automatic Sensor Assembly Status -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 hairline-b pb-6">
+        <!-- Header with Automatic Sensor Assembly Status & Tri-Color Hardware Indicators -->
+        <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 hairline-b pb-6">
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-coral text-sm">✦</span>
@@ -743,9 +750,54 @@
                 <p class="text-xs font-mono text-slate-400 mt-1">Autonomous hardware subsystems with magnetic bus docking and real-time register telemetry.</p>
             </div>
             
-            <!-- Real-Time Hardware Status Badge -->
-            <div class="flex items-center gap-3">
-                <div id="hardwareAssemblyStatus" class="flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/40 border border-white/10 text-xs font-mono text-slate-400">
+            <!-- Real-Time Hardware Status Indicators & Docking Badge -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Tri-Color Status Array (Pins 3, 4, 5) -->
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-white/10 bg-[#0C0F17]/90 backdrop-blur-xl shadow-xl">
+                    <div class="hidden sm:flex items-center gap-1.5 pr-2.5 border-r border-white/10">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></span>
+                        <span class="text-[10px] font-mono font-bold text-slate-300 uppercase tracking-wider">HARDWARE LEDS</span>
+                    </div>
+
+                    <!-- 1. GREEN LED (PIN 3: SAFE STANDBY) -->
+                    <div id="ledPanelGreen" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300">
+                        <div class="relative w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                            <span id="ledRingGreen" class="absolute inset-0 rounded-full bg-emerald-400 opacity-60 animate-ping"></span>
+                            <span id="ledCoreGreen" class="relative w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10B981,0_0_4px_#ffffff]"></span>
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <span class="text-[10px] font-mono font-bold text-emerald-400">GREEN</span>
+                            <span id="ledStateTextGreen" class="text-[8px] font-mono text-emerald-400 font-semibold">NORMAL (PIN 3)</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. BLUE LED (PIN 4: GAS LEAK) -->
+                    <div id="ledPanelBlue" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300">
+                        <div class="relative w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                            <span id="ledRingBlue" class="absolute inset-0 rounded-full bg-cyan-400 opacity-0"></span>
+                            <span id="ledCoreBlue" class="relative w-2.5 h-2.5 rounded-full bg-slate-800"></span>
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <span class="text-[10px] font-mono font-bold text-slate-400">BLUE</span>
+                            <span id="ledStateTextBlue" class="text-[8px] font-mono text-slate-500">STANDBY (OFF)</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. RED LED (PIN 5: FIRE HAZARD) -->
+                    <div id="ledPanelRed" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300">
+                        <div class="relative w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                            <span id="ledRingRed" class="absolute inset-0 rounded-full bg-rose-500 opacity-0"></span>
+                            <span id="ledCoreRed" class="relative w-2.5 h-2.5 rounded-full bg-slate-800"></span>
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <span class="text-[10px] font-mono font-bold text-slate-400">RED</span>
+                            <span id="ledStateTextRed" class="text-[8px] font-mono text-slate-500">STANDBY (OFF)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Hardware Status Badge -->
+                <div id="hardwareAssemblyStatus" class="flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/40 border border-white/10 text-xs font-mono text-slate-400 self-center">
                     <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                     <span>AUTONOMOUS BUS &bull; SCROLL TO DOCK</span>
                 </div>
@@ -1062,10 +1114,52 @@
     </section>
 
     <!-- FOOTER -->
-    <footer class="relative z-30 hairline-t py-12 px-6 sm:px-10 text-center text-xs font-mono text-slate-500 space-y-2">
-        <div>SAFETY-FI 96X &bull; Creative Technologist Architecture &bull; ATmega328P Hardware Parity</div>
-        <div class="text-[10px] text-slate-600">INVENTED WITH RIGOR &bull; SHIFTING PARTICLES ACROSS XYZ PERSPECTIVE</div>
+    <footer class="relative z-30 hairline-t py-12 px-6 sm:px-10 text-center text-xs font-mono text-slate-500 space-y-3">
+        <div class="flex items-center justify-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00]"></span>
+            <span class="text-slate-200 font-semibold tracking-wide uppercase">AUTONOMOUS SAFETY-FI 96X &bull; RESEARCH &amp; HAZARD MITIGATION SENTINEL</span>
+        </div>
+        <div class="text-slate-300 text-xs">
+            Concept, Hardware Parity &amp; Dashboard Engineered by <span class="text-[#CCFF00] font-bold">Arpit Yadav</span>
+        </div>
+        <div class="text-[10px] text-slate-500 tracking-wider">
+            ATmega328P Hardware Parity &bull; Three.js Digital Twin &bull; Web Serial Telemetry &bull; GitHub Pages Live Deployment
+        </div>
     </footer>
+
+    <!-- ======================================================== -->
+    <!-- FLOATING VERIFIED ARCHITECT & DEPLOYMENT SIGNATURE BADGE -->
+    <!-- ======================================================== -->
+    <div id="authorWatermarkBadge" class="fixed bottom-4 right-4 z-40 select-none pointer-events-auto transition-all duration-300 hover:scale-[1.02]">
+        <div class="group flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-[#090B0E]/90 hover:bg-[#12161F] border border-white/10 hover:border-[#CCFF00]/50 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.7)] transition-all">
+            <!-- Pulsing Sentinel Radar Node -->
+            <div class="relative flex items-center justify-center w-3 h-3">
+                <span class="absolute w-3 h-3 rounded-full bg-[#CCFF00] animate-ping opacity-60"></span>
+                <span class="w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_10px_#CCFF00]"></span>
+            </div>
+            
+            <!-- Architect Metadata -->
+            <div class="flex flex-col text-left">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-mono tracking-widest uppercase text-slate-400 group-hover:text-slate-300">Engineered &amp; Deployed By</span>
+                    <span class="text-[8px] font-mono px-1 py-0.2 rounded bg-[#CCFF00]/10 text-[#CCFF00] font-bold border border-[#CCFF00]/30 tracking-wider">VERIFIED</span>
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs font-display font-bold text-white group-hover:text-[#CCFF00] tracking-wide transition-colors">
+                        Arpit Yadav
+                    </span>
+                    <span class="text-[10px] font-mono text-slate-400 group-hover:text-slate-300">
+                        &bull; Autonomous Safety-Fi 96X
+                    </span>
+                </div>
+            </div>
+
+            <!-- GitHub Profile Icon Link -->
+            <a href="https://github.com/arpityadav626/smart-kitchen" target="_blank" rel="noopener noreferrer" title="View Source on GitHub" class="ml-1 p-1.5 rounded-lg bg-white/5 hover:bg-[#CCFF00]/20 text-slate-400 hover:text-[#CCFF00] transition-all border border-white/5 hover:border-[#CCFF00]/40">
+                <i data-lucide="github" class="w-3.5 h-3.5"></i>
+            </a>
+        </div>
+    </div>
 
     </div><!-- END appContainer -->
 
@@ -1084,6 +1178,10 @@
         let isAssembling = false;
         let isDocked = false;
         let audioEnabled = true;
+        let currentTemp = 30.0;
+        let currentHum = 60.0;
+        let cachedLcdRowA = "";
+        let cachedLcdRowB = "";
 
         // ========================================================
         // 1. BOOT SEQUENCE PRELOADER CONTROLLER (SLOW CINEMATIC UNVEIL)
@@ -2010,22 +2108,180 @@
             } catch(e) {}
         }
 
+        function playEmergencyAlarmSiren() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                [0, 0.15, 0.3].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880, now + offset);
+                    osc.frequency.exponentialRampToValueAtTime(1400, now + offset + 0.1);
+                    gain.gain.setValueAtTime(0.25, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.1);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.11);
+                });
+            } catch(e) {}
+        }
+
+        function playGasWarningTone() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                [0, 0.2].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(520, now + offset);
+                    osc.frequency.setValueAtTime(440, now + offset + 0.08);
+                    gain.gain.setValueAtTime(0.2, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.16);
+                });
+            } catch(e) {}
+        }
+
         // ========================================================
-        // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION
+        // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION (5S LATCH)
         // ========================================================
-        function evalFsm() {
-            const prev = systemState;
-            if (flameDetected) {
-                systemState = 2; // Fire
-            } else if (gasAdc > 400) {
-                systemState = 1; // Gas
+        const HAZARD_MIN_HOLD_MS = 5000; // Hold hazard on dashboard for at least 5 seconds!
+        let latchedHazardState = 0;
+        let latchedHazardUntil = 0;
+
+        function updateStatusLeds(st) {
+            const pGreen = document.getElementById('ledPanelGreen');
+            const rGreen = document.getElementById('ledRingGreen');
+            const cGreen = document.getElementById('ledCoreGreen');
+            const tGreen = document.getElementById('ledStateTextGreen');
+
+            const pBlue = document.getElementById('ledPanelBlue');
+            const rBlue = document.getElementById('ledRingBlue');
+            const cBlue = document.getElementById('ledCoreBlue');
+            const tBlue = document.getElementById('ledStateTextBlue');
+
+            const pRed = document.getElementById('ledPanelRed');
+            const rRed = document.getElementById('ledRingRed');
+            const cRed = document.getElementById('ledCoreRed');
+            const tRed = document.getElementById('ledStateTextRed');
+
+            const miniG = document.getElementById('miniLedGreen');
+            const miniB = document.getElementById('miniLedBlue');
+            const miniR = document.getElementById('miniLedRed');
+
+            if (st === 2) {
+                // State 2: FIRE HAZARD -> RED ON, Green & Blue OFF
+                if (pGreen) { pGreen.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-0"; }
+                if (cGreen) { cGreen.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tGreen) { tGreen.innerText = "STANDBY (OFF)"; tGreen.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (pBlue) { pBlue.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-0"; }
+                if (cBlue) { cBlue.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tBlue) { tBlue.innerText = "STANDBY (OFF)"; tBlue.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (pRed) { pRed.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-rose-500/60 bg-rose-500/20 shadow-[0_0_25px_rgba(244,63,94,0.5)] transition-all duration-300 animate-pulse"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-80 animate-ping"; }
+                if (cRed) { cRed.className = "relative w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_15px_#F43F5E,0_0_5px_#ffffff]"; }
+                if (tRed) { tRed.innerText = "FIRE ACTIVE (PIN 5)"; tRed.className = "text-[8px] font-mono text-rose-400 font-bold"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_#F43F5E] animate-pulse transition-all"; }
+
+            } else if (st === 1) {
+                // State 1: GAS LEAK -> BLUE ON, Green & Red OFF
+                if (pGreen) { pGreen.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-0"; }
+                if (cGreen) { cGreen.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tGreen) { tGreen.innerText = "STANDBY (OFF)"; tGreen.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (pBlue) { pBlue.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-cyan-500/60 bg-cyan-500/20 shadow-[0_0_25px_rgba(56,189,248,0.5)] transition-all duration-300 animate-pulse"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-80 animate-ping"; }
+                if (cBlue) { cBlue.className = "relative w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_15px_#38BDF8,0_0_5px_#ffffff]"; }
+                if (tBlue) { tBlue.innerText = "GAS ACTIVE (PIN 4)"; tBlue.className = "text-[8px] font-mono text-cyan-400 font-bold"; }
+
+                if (pRed) { pRed.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-0"; }
+                if (cRed) { cRed.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tRed) { tRed.innerText = "STANDBY (OFF)"; tRed.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#38BDF8] animate-pulse transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+
             } else {
-                systemState = 0; // Safe
+                // State 0: SAFE STANDBY -> GREEN ON, Blue & Red OFF
+                if (pGreen) { pGreen.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/50 bg-emerald-500/15 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all duration-300"; }
+                if (rGreen) { rGreen.className = "absolute inset-0 rounded-full bg-emerald-400 opacity-60 animate-ping"; }
+                if (cGreen) { cGreen.className = "relative w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#10B981,0_0_4px_#ffffff]"; }
+                if (tGreen) { tGreen.innerText = "NORMAL (PIN 3)"; tGreen.className = "text-[8px] font-mono text-emerald-400 font-semibold"; }
+
+                if (pBlue) { pBlue.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rBlue) { rBlue.className = "absolute inset-0 rounded-full bg-cyan-400 opacity-0"; }
+                if (cBlue) { cBlue.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tBlue) { tBlue.innerText = "STANDBY (OFF)"; tBlue.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (pRed) { pRed.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-black/40 opacity-30 transition-all duration-300"; }
+                if (rRed) { rRed.className = "absolute inset-0 rounded-full bg-rose-500 opacity-0"; }
+                if (cRed) { cRed.className = "relative w-2.5 h-2.5 rounded-full bg-slate-800"; }
+                if (tRed) { tRed.innerText = "STANDBY (OFF)"; tRed.className = "text-[8px] font-mono text-slate-500"; }
+
+                if (miniG) { miniG.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10B981] animate-pulse transition-all"; }
+                if (miniB) { miniB.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+                if (miniR) { miniR.className = "w-2.5 h-2.5 rounded-full bg-slate-700 opacity-25 transition-all"; }
+            }
+        }
+
+        function evalFsm(explicitState = null) {
+            const prev = systemState;
+            const now = Date.now();
+
+            let rawTrigger = 0;
+            if (explicitState === 2 || flameDetected) {
+                rawTrigger = 2;
+            } else if (explicitState === 1 || gasAdc > 400) {
+                rawTrigger = 1;
+            }
+
+            // 5-second latch hold: extend latch whenever hazard is actively detected
+            if (rawTrigger === 2) {
+                latchedHazardState = 2;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+            } else if (rawTrigger === 1) {
+                if (latchedHazardState !== 2 || now >= latchedHazardUntil) {
+                    latchedHazardState = 1;
+                    latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+                }
+            }
+
+            // Check if 5-second latch hold is still active
+            if (now < latchedHazardUntil) {
+                systemState = latchedHazardState;
+                if (systemState === 2) flameDetected = true;
+            } else {
+                latchedHazardState = 0;
+                systemState = rawTrigger;
+                if (systemState === 0) flameDetected = false;
             }
 
             if (systemState !== prev) {
                 playRelayClick();
                 playSmsChime();
+                if (systemState === 2) {
+                    playEmergencyAlarmSiren();
+                } else if (systemState === 1) {
+                    playGasWarningTone();
+                }
             }
             syncUi();
         }
@@ -2071,11 +2327,14 @@
 
             oledText.classList.remove('oled-state-gas', 'oled-state-fire');
             vignette.className = "";
+            updateStatusLeds(systemState);
 
             if (systemState === 2) {
                 vignette.className = "vignette-fire";
                 statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-xs font-mono font-bold tracking-wider text-rose-400 animate-pulse";
-                stateText.innerText = "CRITICAL &bull; FIRE DETECTED";
+                const now = Date.now();
+                const holdSec = latchedHazardUntil > now ? Math.ceil((latchedHazardUntil - now) / 1000) : 0;
+                stateText.innerText = holdSec > 0 ? `CRITICAL • FIRE DETECTED [${holdSec}s]` : "CRITICAL • FIRE DETECTED";
 
                 t3Dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping";
                 t3Label.innerText = "Combustion Alert &bull; Fan Locked";
@@ -2103,6 +2362,8 @@
 
                 gasPill.innerText = "! COMBUSTION ACTIVE !";
                 gasPill.className = "text-rose-400 font-medium";
+                gasRing.style.stroke = "#F43F5E";
+                gasHalo.style.boxShadow = "0 0 35px rgba(244, 63, 94, 0.4)";
 
                 lensRing.style.borderColor = "#F43F5E";
                 lensRing.style.boxShadow = "0 0 25px rgba(244, 63, 94, 0.4)";
@@ -2131,35 +2392,39 @@
 
             } else if (systemState === 1) {
                 vignette.className = "vignette-gas";
-                statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-mono font-bold tracking-wider text-amber-400 animate-pulse";
-                stateText.innerText = "WARNING &bull; GAS LEAKAGE";
+                statePill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-xs font-mono font-bold tracking-wider text-cyan-400 animate-pulse";
+                const now = Date.now();
+                const holdSec = latchedHazardUntil > now ? Math.ceil((latchedHazardUntil - now) / 1000) : 0;
+                stateText.innerText = holdSec > 0 ? `WARNING • GAS LEAKAGE [${holdSec}s]` : "WARNING • GAS LEAKAGE";
 
-                t3Dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
+                t3Dot.className = "w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping";
                 t3Label.innerText = "Vapor Extraction &bull; 2800 RPM";
                 targetFanSpeed = 2800;
                 hoodRpm.innerText = "2800 RPM (HIGH)";
-                hoodRpm.className = "text-amber-400 font-medium text-sm";
+                hoodRpm.className = "text-cyan-400 font-medium text-sm";
                 solenoid.innerText = "DE-ENERGIZED";
                 solenoid.className = "text-slate-400 font-medium text-sm";
 
                 if (burnerA && burnerB) {
-                    burnerA.material.color.setHex(0xF59E0B);
-                    burnerA.material.emissive.setHex(0xF59E0B);
-                    burnerB.material.color.setHex(0xF59E0B);
-                    burnerB.material.emissive.setHex(0xF59E0B);
+                    burnerA.material.color.setHex(0x38BDF8);
+                    burnerA.material.emissive.setHex(0x38BDF8);
+                    burnerB.material.color.setHex(0x38BDF8);
+                    burnerB.material.emissive.setHex(0x38BDF8);
                 }
 
                 if (ringGroupA && ringGroupB) {
-                    ringGroupA.children.forEach(r => r.material.color.setHex(0xF59E0B));
-                    ringGroupB.children.forEach(r => r.material.color.setHex(0xF59E0B));
+                    ringGroupA.children.forEach(r => r.material.color.setHex(0x38BDF8));
+                    ringGroupB.children.forEach(r => r.material.color.setHex(0x38BDF8));
                 }
 
                 if (genParticleSystem && genParticleSystem.material) {
-                    genParticleSystem.material.color.setHex(0xF59E0B);
+                    genParticleSystem.material.color.setHex(0x38BDF8);
                 }
 
                 gasPill.innerText = `! LEAK ALERT [${gasAdc}] !`;
-                gasPill.className = "text-amber-400 font-medium";
+                gasPill.className = "text-cyan-400 font-medium";
+                gasRing.style.stroke = "#38BDF8";
+                gasHalo.style.boxShadow = "0 0 35px rgba(56, 189, 248, 0.4)";
 
                 lensRing.style.borderColor = "rgba(255,255,255,0.1)";
                 lensRing.style.boxShadow = "none";
@@ -2167,7 +2432,7 @@
                 lensLabel.innerText = "OPTICAL STANDBY";
                 lensLabel.className = "absolute bottom-3 text-[11px] font-mono text-slate-400 tracking-wider";
 
-                fanLabel.innerText = "ENERGIZED"; fanLabel.className = "text-xs font-mono text-amber-400 font-bold";
+                fanLabel.innerText = "ENERGIZED"; fanLabel.className = "text-xs font-mono text-cyan-400 font-bold";
                 fanRocker.className = "metal-rocker active";
                 pumpLabel.innerText = "CUT OFF"; pumpLabel.className = "text-xs font-mono text-slate-400 font-semibold";
                 pumpRocker.className = "metal-rocker";
@@ -2177,13 +2442,13 @@
                 oledText.classList.add('oled-state-gas');
                 oledRowA.innerText = "! GAS LEAKAGE ! ";
                 oledRowB.innerText = "EXHAUST FAN ON  ";
-                oledMode.innerText = "Amber Alert";
+                oledMode.innerText = "Blue Alert";
 
                 phoneFrame.classList.add('phone-shake');
                 setTimeout(() => phoneFrame.classList.remove('phone-shake'), 600);
-                notifBadge.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+                notifBadge.className = "w-2 h-2 rounded-full bg-cyan-400 animate-ping";
                 notifTitle.innerText = "⚠️ GAS LEAKAGE ALERT";
-                notifTitle.className = "text-[10px] font-bold text-amber-400 uppercase";
+                notifTitle.className = "text-[10px] font-bold text-cyan-400 uppercase";
                 notifBody.innerText = `WARNING: Gas level ${gasAdc} ADC exceeded threshold 400! Extractor fan forced ON.`;
 
             } else {
@@ -2216,6 +2481,8 @@
 
                 gasPill.innerText = `SAFE [${gasAdc} ADC]`;
                 gasPill.className = "text-[#CCFF00] font-medium";
+                gasRing.style.stroke = "#CCFF00";
+                gasHalo.style.boxShadow = "none";
 
                 lensRing.style.borderColor = "rgba(255,255,255,0.1)";
                 lensRing.style.boxShadow = "none";
@@ -2233,9 +2500,14 @@
                 if (Date.now() - lastLcdRecalibration < 650) {
                     oledRowA.innerText = "RECALIBRATING...";
                     oledRowB.innerText = "I2C BUS READY   ";
+                } else if (cachedLcdRowA && cachedLcdRowB) {
+                    oledRowA.innerText = cachedLcdRowA;
+                    oledRowB.innerText = cachedLcdRowB;
                 } else {
-                    oledRowA.innerText = "T:27°C  H:48%    ";
-                    oledRowB.innerText = `Gas:${gasAdc} [Safe]   `;
+                    const tStr = currentTemp ? currentTemp.toFixed(1) : "28.0";
+                    const hStr = currentHum ? Math.round(currentHum) : "50";
+                    oledRowA.innerText = `T:${tStr}C  H:${hStr}%    `;
+                    oledRowB.innerText = `GAS:${gasAdc}  [SAFE]  `;
                 }
                 oledMode.innerText = "OLED Standby";
 
@@ -2254,22 +2526,36 @@
 
         function toggleCombustionTrigger() {
             flameDetected = !flameDetected;
+            if (flameDetected) {
+                latchedHazardState = 2;
+                latchedHazardUntil = Date.now() + HAZARD_MIN_HOLD_MS;
+            } else {
+                latchedHazardState = 0;
+                latchedHazardUntil = 0;
+            }
             evalFsm();
         }
 
         function setSystemState(target) {
+            const now = Date.now();
             if (target === 2) {
                 flameDetected = true;
+                latchedHazardState = 2;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
             } else if (target === 1) {
                 flameDetected = false;
                 gasAdc = 650;
                 document.getElementById('gasSlider').value = 650;
+                latchedHazardState = 1;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
             } else {
                 flameDetected = false;
                 gasAdc = 85;
                 document.getElementById('gasSlider').value = 85;
+                latchedHazardState = 0;
+                latchedHazardUntil = 0;
             }
-            evalFsm();
+            evalFsm(target);
         }
 
         function toggleTactileMute() {
@@ -2355,8 +2641,19 @@
             });
         }
 
-        // Web Serial
+        // Web Serial & Backend Sync
         async function toggleWebSerialDirect() {
+            try {
+                const res = await fetch('/api/data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.connected) {
+                        alert(`Arduino is already connected and streaming live via Python backend on ${data.port || 'COM9'}!\nTelemetry is fully synced.`);
+                        return;
+                    }
+                }
+            } catch(e) {}
+
             if (!("serial" in navigator)) {
                 alert("Web Serial is supported in Google Chrome, Edge, and Opera.");
                 return;
@@ -2364,7 +2661,14 @@
             try {
                 webSerialPort = await navigator.serial.requestPort();
                 await webSerialPort.open({ baudRate: 9600 });
-                document.getElementById('serialIngressLabel').innerText = "Serial Active (9600)";
+                const label = document.getElementById('serialIngressLabel');
+                if (label) label.innerText = "Serial Active (9600)";
+                const btn = document.getElementById('webSerialIngressBtn');
+                if (btn) {
+                    btn.classList.add('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                    const dot = btn.querySelector('span:first-child');
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse';
+                }
                 readSerialLoop();
             } catch (e) {
                 console.warn(e);
@@ -2389,28 +2693,100 @@
                             const p = JSON.parse(l);
                             if ("gas" in p) gasAdc = parseInt(p.gas);
                             if ("flame" in p) flameDetected = Boolean(p.flame);
-                            evalFsm();
+                            let targetState = null;
+                            if ("state" in p && p.state !== undefined) {
+                                targetState = parseInt(p.state);
+                            }
+                            if ("temp" in p && p.temp) {
+                                currentTemp = parseFloat(p.temp);
+                                const tEl = document.getElementById('tempMetric');
+                                if (tEl) tEl.innerText = `${currentTemp.toFixed(1)}°C`;
+                            }
+                            if ("hum" in p && p.hum) {
+                                currentHum = parseFloat(p.hum);
+                                const hEl = document.getElementById('humMetric');
+                                if (hEl) hEl.innerText = `${currentHum.toFixed(0)}%`;
+                            }
+                            evalFsm(targetState);
                         } catch (err) {}
                     }
                 }
             }
         }
 
-        // Polling fallback
+        // Real-Time High-Speed Hardware Sync Polling (250ms)
         setInterval(async () => {
             if (webSerialPort) return;
             try {
                 const res = await fetch('/api/data');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && "gas" in data) {
-                        gasAdc = parseInt(data.gas);
-                        flameDetected = Boolean(data.flame);
-                        evalFsm();
+                    if (data) {
+                        if ("gas" in data) gasAdc = parseInt(data.gas);
+                        if ("flame" in data) flameDetected = Boolean(data.flame);
+
+                        // Live DHT11 temperature and humidity
+                        if ("temperature" in data && data.temperature !== undefined) {
+                            currentTemp = parseFloat(data.temperature);
+                            const tEl = document.getElementById('tempMetric');
+                            if (tEl) tEl.innerText = `${currentTemp.toFixed(1)}°C`;
+                        }
+                        if ("humidity" in data && data.humidity !== undefined) {
+                            currentHum = parseFloat(data.humidity);
+                            const hEl = document.getElementById('humMetric');
+                            if (hEl) hEl.innerText = `${currentHum.toFixed(0)}%`;
+                        }
+
+                        // Live LCD Mockup lines
+                        if (data.lcd_line1) {
+                            cachedLcdRowA = data.lcd_line1;
+                        }
+                        if (data.lcd_line2) {
+                            cachedLcdRowB = data.lcd_line2;
+                        }
+
+                        // Direct Hardware FSM State Resolution
+                        let targetState = null;
+                        if ("fsm_state" in data && data.fsm_state !== undefined && data.fsm_state !== null) {
+                            targetState = parseInt(data.fsm_state);
+                        } else if ("state" in data && data.state !== undefined && data.state !== null) {
+                            targetState = parseInt(data.state);
+                        } else if (flameDetected) {
+                            targetState = 2;
+                        } else if (gasAdc > 400) {
+                            targetState = 1;
+                        } else {
+                            targetState = 0;
+                        }
+
+                        // Header Hardware Connection Beacon
+                        const btn = document.getElementById('webSerialIngressBtn');
+                        const label = document.getElementById('serialIngressLabel');
+                        if (btn && label) {
+                            if (data.connected) {
+                                btn.classList.add('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                                btn.classList.remove('text-slate-300');
+                                const dot = btn.querySelector('span:first-child');
+                                if (dot) {
+                                    dot.className = 'w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse';
+                                }
+                                label.innerText = `Hardware Live (${data.port || 'COM9'})`;
+                            } else {
+                                btn.classList.remove('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                                btn.classList.add('text-slate-300');
+                                const dot = btn.querySelector('span:first-child');
+                                if (dot) {
+                                    dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                                }
+                                label.innerText = 'Connect Hardware';
+                            }
+                        }
+
+                        evalFsm(targetState);
                     }
                 }
             } catch (e) {}
-        }, 1000);
+        }, 250);
 
         setInterval(() => {
             if (systemState === 0) {
