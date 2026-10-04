@@ -1126,6 +1126,10 @@
         let isAssembling = false;
         let isDocked = false;
         let audioEnabled = true;
+        let currentTemp = 30.0;
+        let currentHum = 60.0;
+        let cachedLcdRowA = "";
+        let cachedLcdRowB = "";
 
         // ========================================================
         // 1. BOOT SEQUENCE PRELOADER CONTROLLER (SLOW CINEMATIC UNVEIL)
@@ -2325,9 +2329,14 @@
                 if (Date.now() - lastLcdRecalibration < 650) {
                     oledRowA.innerText = "RECALIBRATING...";
                     oledRowB.innerText = "I2C BUS READY   ";
+                } else if (cachedLcdRowA && cachedLcdRowB) {
+                    oledRowA.innerText = cachedLcdRowA;
+                    oledRowB.innerText = cachedLcdRowB;
                 } else {
-                    oledRowA.innerText = "T:27°C  H:48%    ";
-                    oledRowB.innerText = `Gas:${gasAdc} [Safe]   `;
+                    const tStr = currentTemp ? currentTemp.toFixed(1) : "28.0";
+                    const hStr = currentHum ? Math.round(currentHum) : "50";
+                    oledRowA.innerText = `T:${tStr}C  H:${hStr}%    `;
+                    oledRowB.innerText = `GAS:${gasAdc}  [SAFE]  `;
                 }
                 oledMode.innerText = "OLED Standby";
 
@@ -2504,12 +2513,14 @@
                                 targetState = parseInt(p.state);
                             }
                             if ("temp" in p && p.temp) {
+                                currentTemp = parseFloat(p.temp);
                                 const tEl = document.getElementById('tempMetric');
-                                if (tEl) tEl.innerText = `${parseFloat(p.temp).toFixed(1)}°C`;
+                                if (tEl) tEl.innerText = `${currentTemp.toFixed(1)}°C`;
                             }
                             if ("hum" in p && p.hum) {
+                                currentHum = parseFloat(p.hum);
                                 const hEl = document.getElementById('humMetric');
-                                if (hEl) hEl.innerText = `${parseFloat(p.hum).toFixed(0)}%`;
+                                if (hEl) hEl.innerText = `${currentHum.toFixed(0)}%`;
                             }
                             evalFsm(targetState);
                         } catch (err) {}
@@ -2531,22 +2542,22 @@
 
                         // Live DHT11 temperature and humidity
                         if ("temperature" in data && data.temperature !== undefined) {
+                            currentTemp = parseFloat(data.temperature);
                             const tEl = document.getElementById('tempMetric');
-                            if (tEl) tEl.innerText = `${parseFloat(data.temperature).toFixed(1)}°C`;
+                            if (tEl) tEl.innerText = `${currentTemp.toFixed(1)}°C`;
                         }
                         if ("humidity" in data && data.humidity !== undefined) {
+                            currentHum = parseFloat(data.humidity);
                             const hEl = document.getElementById('humMetric');
-                            if (hEl) hEl.innerText = `${parseFloat(data.humidity).toFixed(0)}%`;
+                            if (hEl) hEl.innerText = `${currentHum.toFixed(0)}%`;
                         }
 
                         // Live LCD Mockup lines
                         if (data.lcd_line1) {
-                            const l1 = document.getElementById('lcdRowA');
-                            if (l1) l1.innerText = data.lcd_line1;
+                            cachedLcdRowA = data.lcd_line1;
                         }
                         if (data.lcd_line2) {
-                            const l2 = document.getElementById('lcdRowB');
-                            if (l2) l2.innerText = data.lcd_line2;
+                            cachedLcdRowB = data.lcd_line2;
                         }
 
                         // Direct Hardware FSM State Resolution

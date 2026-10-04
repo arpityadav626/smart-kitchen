@@ -22,8 +22,8 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Thread-safe lock and comprehensive prototype state
-lock = threading.Lock()
+# Thread-safe reentrant lock and comprehensive prototype state
+lock = threading.RLock()
 state = {
     # Sensor telemetry
     "gas": 120,
@@ -100,20 +100,25 @@ def add_gsm_log(at_command: str):
 
 def trigger_sms_dispatch(event_type: str, message_body: str):
     timestamp = time.strftime("%H:%M:%S")
-    sms_entry = {
-        "id": state["gsm"]["sms_count"] + 1,
-        "timestamp": timestamp,
-        "type": event_type,
-        "recipient": state["gsm"]["target_number"],
-        "body": message_body,
-        "status": "DELIVERED"
-    }
-    state["gsm"]["sms_count"] += 1
-    state["gsm"]["last_sms"] = sms_entry
-    add_gsm_log(f'AT+CMGS="{state["gsm"]["target_number"]}"')
-    add_gsm_log(f'> {message_body}')
-    add_gsm_log("+CMGS: 42 -> SMS SENT OK")
-    add_log(f"[GSM ALERT DISPATCHED] {event_type} to {state['gsm']['target_number']}")
+    with lock:
+        sms_entry = {
+            "id": state["gsm"]["sms_count"] + 1,
+            "timestamp": timestamp,
+            "type": event_type,
+            "recipient": state["gsm"]["target_number"],
+            "body": message_body,
+            "status": "DELIVERED"
+        }
+        state["gsm"]["sms_count"] += 1
+        state["gsm"]["last_sms"] = sms_entry
+        state["gsm"]["at_logs"].append(f'[{timestamp}] AT+CMGS="{state["gsm"]["target_number"]}"')
+        state["gsm"]["at_logs"].append(f'[{timestamp}] > {message_body}')
+        state["gsm"]["at_logs"].append(f"[{timestamp}] +CMGS: 42 -> SMS SENT OK")
+        if len(state["gsm"]["at_logs"]) > 20:
+            state["gsm"]["at_logs"].pop(0)
+        state["recent_logs"].append(f"[{timestamp}] [GSM ALERT DISPATCHED] {event_type} to {state['gsm']['target_number']}")
+        if len(state["recent_logs"]) > 30:
+            state["recent_logs"].pop(0)
 
 def update_fsm_logic(hw_state=None):
     """Calculates or applies FSM State and outputs based on sensor values or hardware state"""
