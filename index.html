@@ -2052,12 +2052,57 @@
             } catch(e) {}
         }
 
+        function playEmergencyAlarmSiren() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                [0, 0.15, 0.3].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880, now + offset);
+                    osc.frequency.exponentialRampToValueAtTime(1400, now + offset + 0.1);
+                    gain.gain.setValueAtTime(0.25, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.1);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.11);
+                });
+            } catch(e) {}
+        }
+
+        function playGasWarningTone() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                [0, 0.2].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(520, now + offset);
+                    osc.frequency.setValueAtTime(440, now + offset + 0.08);
+                    gain.gain.setValueAtTime(0.2, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.16);
+                });
+            } catch(e) {}
+        }
+
         // ========================================================
         // 8. MASTER FSM EVALUATION & UI SYNCHRONIZATION
         // ========================================================
-        function evalFsm() {
+        function evalFsm(explicitState = null) {
             const prev = systemState;
-            if (flameDetected) {
+            if (explicitState !== null && explicitState !== undefined) {
+                systemState = explicitState;
+                flameDetected = (systemState === 2);
+            } else if (flameDetected) {
                 systemState = 2; // Fire
             } else if (gasAdc > 400) {
                 systemState = 1; // Gas
@@ -2068,6 +2113,11 @@
             if (systemState !== prev) {
                 playRelayClick();
                 playSmsChime();
+                if (systemState === 2) {
+                    playEmergencyAlarmSiren();
+                } else if (systemState === 1) {
+                    playGasWarningTone();
+                }
             }
             syncUi();
         }
@@ -2397,8 +2447,19 @@
             });
         }
 
-        // Web Serial
+        // Web Serial & Backend Sync
         async function toggleWebSerialDirect() {
+            try {
+                const res = await fetch('/api/data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.connected) {
+                        alert(`Arduino is already connected and streaming live via Python backend on ${data.port || 'COM9'}!\nTelemetry is fully synced.`);
+                        return;
+                    }
+                }
+            } catch(e) {}
+
             if (!("serial" in navigator)) {
                 alert("Web Serial is supported in Google Chrome, Edge, and Opera.");
                 return;
@@ -2406,7 +2467,14 @@
             try {
                 webSerialPort = await navigator.serial.requestPort();
                 await webSerialPort.open({ baudRate: 9600 });
-                document.getElementById('serialIngressLabel').innerText = "Serial Active (9600)";
+                const label = document.getElementById('serialIngressLabel');
+                if (label) label.innerText = "Serial Active (9600)";
+                const btn = document.getElementById('webSerialIngressBtn');
+                if (btn) {
+                    btn.classList.add('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                    const dot = btn.querySelector('span:first-child');
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse';
+                }
                 readSerialLoop();
             } catch (e) {
                 console.warn(e);
@@ -2431,28 +2499,98 @@
                             const p = JSON.parse(l);
                             if ("gas" in p) gasAdc = parseInt(p.gas);
                             if ("flame" in p) flameDetected = Boolean(p.flame);
-                            evalFsm();
+                            let targetState = null;
+                            if ("state" in p && p.state !== undefined) {
+                                targetState = parseInt(p.state);
+                            }
+                            if ("temp" in p && p.temp) {
+                                const tEl = document.getElementById('tempMetric');
+                                if (tEl) tEl.innerText = `${parseFloat(p.temp).toFixed(1)}°C`;
+                            }
+                            if ("hum" in p && p.hum) {
+                                const hEl = document.getElementById('humMetric');
+                                if (hEl) hEl.innerText = `${parseFloat(p.hum).toFixed(0)}%`;
+                            }
+                            evalFsm(targetState);
                         } catch (err) {}
                     }
                 }
             }
         }
 
-        // Polling fallback
+        // Real-Time High-Speed Hardware Sync Polling (250ms)
         setInterval(async () => {
             if (webSerialPort) return;
             try {
                 const res = await fetch('/api/data');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && "gas" in data) {
-                        gasAdc = parseInt(data.gas);
-                        flameDetected = Boolean(data.flame);
-                        evalFsm();
+                    if (data) {
+                        if ("gas" in data) gasAdc = parseInt(data.gas);
+                        if ("flame" in data) flameDetected = Boolean(data.flame);
+
+                        // Live DHT11 temperature and humidity
+                        if ("temperature" in data && data.temperature !== undefined) {
+                            const tEl = document.getElementById('tempMetric');
+                            if (tEl) tEl.innerText = `${parseFloat(data.temperature).toFixed(1)}°C`;
+                        }
+                        if ("humidity" in data && data.humidity !== undefined) {
+                            const hEl = document.getElementById('humMetric');
+                            if (hEl) hEl.innerText = `${parseFloat(data.humidity).toFixed(0)}%`;
+                        }
+
+                        // Live LCD Mockup lines
+                        if (data.lcd_line1) {
+                            const l1 = document.getElementById('lcdRowA');
+                            if (l1) l1.innerText = data.lcd_line1;
+                        }
+                        if (data.lcd_line2) {
+                            const l2 = document.getElementById('lcdRowB');
+                            if (l2) l2.innerText = data.lcd_line2;
+                        }
+
+                        // Direct Hardware FSM State Resolution
+                        let targetState = null;
+                        if ("fsm_state" in data && data.fsm_state !== undefined && data.fsm_state !== null) {
+                            targetState = parseInt(data.fsm_state);
+                        } else if ("state" in data && data.state !== undefined && data.state !== null) {
+                            targetState = parseInt(data.state);
+                        } else if (flameDetected) {
+                            targetState = 2;
+                        } else if (gasAdc > 400) {
+                            targetState = 1;
+                        } else {
+                            targetState = 0;
+                        }
+
+                        // Header Hardware Connection Beacon
+                        const btn = document.getElementById('webSerialIngressBtn');
+                        const label = document.getElementById('serialIngressLabel');
+                        if (btn && label) {
+                            if (data.connected) {
+                                btn.classList.add('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                                btn.classList.remove('text-slate-300');
+                                const dot = btn.querySelector('span:first-child');
+                                if (dot) {
+                                    dot.className = 'w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse';
+                                }
+                                label.innerText = `Hardware Live (${data.port || 'COM9'})`;
+                            } else {
+                                btn.classList.remove('border-[#CCFF00]', 'bg-[#CCFF00]/10', 'text-[#CCFF00]');
+                                btn.classList.add('text-slate-300');
+                                const dot = btn.querySelector('span:first-child');
+                                if (dot) {
+                                    dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                                }
+                                label.innerText = 'Connect Hardware';
+                            }
+                        }
+
+                        evalFsm(targetState);
                     }
                 }
             } catch (e) {}
-        }, 1000);
+        }, 250);
 
         setInterval(() => {
             if (systemState === 0) {

@@ -76,7 +76,8 @@ state = {
         "[INIT] Embedded System State Machine Loaded",
         "[INIT] LCD 16x2 I2C Display Bound (0x27)",
         "[INIT] SIM800L GSM Telemetry Subsystem Online"
-    ]
+    ],
+    "raw_packet": ""
 }
 
 manual_selected_port = None
@@ -114,15 +115,25 @@ def trigger_sms_dispatch(event_type: str, message_body: str):
     add_gsm_log("+CMGS: 42 -> SMS SENT OK")
     add_log(f"[GSM ALERT DISPATCHED] {event_type} to {state['gsm']['target_number']}")
 
-def update_fsm_logic():
-    """Calculates FSM State and outputs based on sensor values"""
+def update_fsm_logic(hw_state=None):
+    """Calculates or applies FSM State and outputs based on sensor values or hardware state"""
     gas = state["gas"]
     flame = state["flame"]
     prev_fsm = state["fsm_state"]
 
-    if flame:
+    if hw_state is not None:
+        target_fsm = int(hw_state)
+    elif flame:
+        target_fsm = 2
+    elif gas > 400:
+        target_fsm = 1
+    else:
+        target_fsm = 0
+
+    if target_fsm == 2:
         # State 2: Fire Emergency
         state["fsm_state"] = 2
+        state["flame"] = True
         state["fsm_label"] = "FIRE_EMERGENCY"
         state["led_green"] = False
         state["led_blue"] = False
@@ -134,14 +145,16 @@ def update_fsm_logic():
         state["lcd_line2"] = "SPRINKLER ON"
 
         if prev_fsm != 2:
+            add_log(f"[CRITICAL ALERT] 🔥 Flame detected! Sprinkler engaged, fan cut off.")
             trigger_sms_dispatch(
                 "FIRE_EMERGENCY",
                 "CRITICAL: Fire flame hazard detected in Kitchen! Sprinkler engaged, fan cut off. Evacuate!"
             )
 
-    elif gas > 400:
+    elif target_fsm == 1:
         # State 1: Gas Leakage
         state["fsm_state"] = 1
+        state["flame"] = False
         state["fsm_label"] = "GAS_LEAK_ALERT"
         state["led_green"] = False
         state["led_blue"] = True
@@ -153,6 +166,7 @@ def update_fsm_logic():
         state["lcd_line2"] = f"EXHAUST ON ({gas}PPM)"
 
         if prev_fsm != 1:
+            add_log(f"[WARNING ALERT] ⚠️ Gas leakage ({gas} PPM)! Exhaust fan engaged.")
             trigger_sms_dispatch(
                 "GAS_LEAKAGE",
                 f"WARNING: LPG Gas concentration {gas} PPM (threshold 400). Exhaust fan active. Ventilate immediately!"
@@ -161,6 +175,7 @@ def update_fsm_logic():
     else:
         # State 0: Safe State
         state["fsm_state"] = 0
+        state["flame"] = False
         state["fsm_label"] = "SAFE_STANDBY"
         state["led_green"] = True
         state["led_blue"] = False
@@ -173,6 +188,9 @@ def update_fsm_logic():
         hum = state["humidity"]
         state["lcd_line1"] = f"TEMP:{temp:.1f}C H:{hum:.0f}%"
         state["lcd_line2"] = f"GAS:{gas}PPM SAFE"
+
+        if prev_fsm != 0:
+            add_log("[AUTO-RESET] ✅ Hazard cleared: Returned to Safe Standby.")
 
 def detect_arduino_port():
     global manual_selected_port
@@ -218,6 +236,7 @@ def serial_worker():
                             try:
                                 data = json.loads(raw_line)
                                 with lock:
+                                    state["raw_packet"] = raw_line
                                     if "gas" in data:
                                         state["gas"] = int(data["gas"])
                                     if "temp" in data:
@@ -228,9 +247,16 @@ def serial_worker():
                                         state["flame"] = bool(data["flame"])
                                     if "muted" in data:
                                         state["buzzer_muted"] = bool(data["muted"])
+                                    if "fan" in data:
+                                        state["exhaust_fan"] = str(data["fan"]).upper()
+                                    if "pump" in data:
+                                        state["water_pump"] = str(data["pump"]).upper()
+                                    
+                                    hw_state = data.get("state")
+                                    update_fsm_logic(hw_state)
+
                                     if "sms" in data:
                                         trigger_sms_dispatch(data.get("sms_type", "HARDWARE_GSM"), data["sms"])
-                                    update_fsm_logic()
                                     state["last_update"] = time.time()
                             except Exception as parse_e:
                                 add_log(f"Parse error: {parse_e}")

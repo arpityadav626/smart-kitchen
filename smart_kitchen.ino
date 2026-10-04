@@ -1,39 +1,25 @@
 /*
  * ====================================================================================================
- * PROJECT: Smart Kitchen Safety & Autonomous Hazard Mitigation System
- * TARGET PLATFORM: Arduino Uno (Microchip ATmega328P @ 16 MHz)
- * ARCHITECTURE: Finite State Machine (FSM) + Non-Blocking millis() Scheduling
- * AUTHOR: Principal Embedded Systems Architect
+ * PROJECT: Smart Kitchen Safety & Autonomous Hazard Mitigation System (SAFETY-FI 96X)
+ * TARGET PLATFORM: Arduino Uno (ATmega328P @ 16 MHz)
+ * ARCHITECTURE: Ultra-Fast 100ms Reactive FSM + 3-Second Sprinkler Latch + Instant Auto-Reset
+ * AUTHOR: Arpit Yadav
  * ====================================================================================================
  *
- * HARDWARE INTERFACE & PIN ASSIGNMENTS:
+ * HARDWARE PIN CONFIGURATION:
  * ----------------------------------------------------------------------------------------------------
- * 1. SENSORS:
- *    - MQ Gas / Smoke Sensor           -> Analog Pin A0 (ADC 0-1023, Gas Threshold: >400)
- *    - Optical Flame Sensor (IR)       -> Digital Pin 8 (Active-LOW TTL: LOW = Combustion IR Detected)
- *    - DHT11 Environmental Sensor      -> Digital Pin 2 (1-Wire Proprietary Serial Stream)
- *    - Tactile Alarm Mute Pushbutton   -> Digital Pin 12 (INPUT_PULLUP: LOW = Actuated)
- *
- * 2. ACTUATORS & ALARMS:
- *    - Status LED Green (Safe Standby) -> Digital Pin 3 (Active-HIGH via 220 Ohm Resistor)
- *    - Status LED Blue (Gas Leak)      -> Digital Pin 4 (Active-HIGH via 220 Ohm Resistor)
- *    - Status LED Red (Fire Hazard)    -> Digital Pin 5 (Active-HIGH via 220 Ohm Resistor)
- *    - Active Piezo Buzzer             -> Digital Pin 9 (Active-HIGH Driver)
- *    - Exhaust Fan Relay Module        -> Digital Pin 7 (Active-LOW Opto-Isolated Relay Coil)
- *    - Water Sprinkler Pump Relay      -> Digital Pin 6 (Active-LOW Opto-Isolated Relay Coil)
- *
- * 3. COMMUNICATION BUSES:
- *    - I2C Bus (PCF8574 Backpack)      -> SDA (Pin A4), SCL (Pin A5) [Address: 0x27 or 0x3F, 100 kHz]
- *    - SIM800L GSM Cellular Modem      -> SoftwareSerial UART (Baud: 9600 bps)
- *                                         Arduino Pin 10 (RX) <- SIM800L TXD (Direct TTL)
- *                                         Arduino Pin 11 (TX) -> SIM800L RXD (via 1k/2k Voltage Divider to 3.3V)
- *
- * 4. POWER & NOISE ISOLATION ARCHITECTURE:
- *    - LM2596 High-Efficiency Buck Converter: Steps 12V DC input down to regulated 5.0V logic rail
- *      and dedicated 4.0V rail for SIM800L capable of 2.0A peak burst transmission pulses.
- *    - 1000uF 25V Low-ESR Decoupling Electrolytic Capacitors installed in parallel across VCC/GND
- *      terminals to absorb inductive back-EMF from mechanical relay coils and pump motor start-up transients.
- *    - Periodic 10-Second I2C Bus Recovery Routine (bootLcdScreen) implemented to prevent PCF8574 register lockups.
+ * - MQ-2 Gas / Smoke Sensor    -> Analog Pin A0
+ * - IR Flame / Fire Sensor     -> Digital Pin 8 (Active-LOW: LOW = Fire Detected)
+ * - DHT11 Temp & Humidity      -> Digital Pin 2
+ * - Piezo Buzzer               -> Digital Pin 9
+ * - Exhaust Fan Relay          -> Digital Pin 7 (Active-LOW Relay: LOW = Fan ON)
+ * - Water Sprinkler Pump Relay -> Digital Pin 6 (Active-LOW Relay: LOW = Pump ON)
+ * - Status LED Green (Safe)    -> Digital Pin 3
+ * - Status LED Blue (Gas Leak) -> Digital Pin 4
+ * - Status LED Red (Fire)      -> Digital Pin 5
+ * - SIM800L GSM Module         -> Pin 10 (Arduino RX <- SIM TXD)
+ *                                 Pin 11 (Arduino TX -> SIM RXD)
+ * - I2C LCD Display (16x2)     -> Pin A4 (SDA), Pin A5 (SCL)
  * ====================================================================================================
  */
 
@@ -42,31 +28,31 @@
 #include <DHT.h>
 #include <SoftwareSerial.h>
 
-// --- HARDWARE PIN DEFINITIONS ---
+// --- PIN ASSIGNMENTS ---
 #define PIN_MQ_GAS         A0
 #define PIN_FLAME          8
 #define PIN_DHT            2
 #define PIN_BUZZER         9
-#define PIN_RELAY_FAN      7     // Active-LOW: LOW = Relay Energized, HIGH = Relay Cut Off
-#define PIN_RELAY_PUMP     6     // Active-LOW: LOW = Relay Energized, HIGH = Relay Cut Off
+#define PIN_RELAY_FAN      7     // LOW = Fan ON, HIGH = Fan OFF
+#define PIN_RELAY_PUMP     6     // LOW = Pump ON, HIGH = Pump OFF
 #define PIN_LED_GREEN      3
 #define PIN_LED_BLUE       4
 #define PIN_LED_RED        5
-#define PIN_BTN_MUTE       12    // Internal Pull-Up Enabled
 
-#define PIN_GSM_RX         10    // Arduino RX <- SIM800L TX
-#define PIN_GSM_TX         11    // Arduino TX -> SIM800L RX (via Voltage Divider)
+#define PIN_GSM_RX         10    // Arduino RX <- SIM800L TXD
+#define PIN_GSM_TX         11    // Arduino TX -> SIM800L RXD
 
-// --- SYSTEM CONSTANTS & CALIBRATION ---
+// --- CONSTANTS & THRESHOLDS ---
 #define DHTTYPE            DHT11
-#define GAS_THRESHOLD      400   // Raw ADC units (Safe <= 400, Hazard > 400)
-#define RELAY_ACTIVE       LOW   // Active-LOW optocoupler trigger
-#define RELAY_INACTIVE     HIGH  // Coil de-energized
+#define GAS_THRESHOLD      400   // Normal <= 400, Gas Leak > 400
+#define RELAY_ACTIVE       LOW   // Active-LOW Trigger (GND ON)
+#define RELAY_INACTIVE     HIGH  // Relay OFF (5V OFF)
+#define PUMP_MIN_DURATION  3000  // Pump runs for at least 3 seconds to extinguish fire
 
-// Emergency Dispatch Phone Number
-const char EMERGENCY_PHONE[] = "+919876543210";
+// ⚠️ EMERGENCY DISPATCH PHONE NUMBER (Arpit Yadav):
+const char EMERGENCY_PHONE[] = "+916387834374";
 
-// --- FINITE STATE MACHINE (FSM) ENUMERATION ---
+// --- SYSTEM STATES ---
 enum SystemState {
   STATE_SAFE = 0,
   STATE_GAS_LEAK = 1,
@@ -74,48 +60,47 @@ enum SystemState {
 };
 
 SystemState currentState = STATE_SAFE;
-SystemState previousState = STATE_SAFE;
 
-// --- HARDWARE DRIVER INSTANCES ---
+// --- SENSOR DRIVERS ---
 DHT dht(PIN_DHT, DHTTYPE);
-LiquidCrystal_I2C lcd(0x27, 16, 2); // Default PCF8574 address
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Default I2C Address: 0x27 (ya 0x3F)
 SoftwareSerial gsmSerial(PIN_GSM_RX, PIN_GSM_TX);
 
-// --- TELEMETRY & CONTROL FLAGS ---
+// Persistent Climate Memory
+float lastTemp = 28.0;
+float lastHum = 50.0;
+int gasVal = 85;
+
+// --- TIMERS ---
+unsigned long lastFastCheck = 0;       // 100ms ultra-fast sensor & actuator loop
+unsigned long lastTelemetryStream = 0; // 1000ms web stream
+unsigned long lastDhtRead = 0;         // 2000ms DHT sensor read
+unsigned long lastFireSeenTime = 0;    // 3-second minimum pump runtime latch
+
+unsigned long lastFireSmsTime = 0;     // SMS rate limiting (30s cooldown)
+unsigned long lastGasSmsTime = 0;
+
 bool buzzerMuted = false;
-bool lastBtnState = HIGH;
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 50;
 
-// Non-blocking Millis Timers
-unsigned long lastSensorReadTime = 0;
-const unsigned long sensorInterval = 1000;   // 1 Hz telemetry cycle
-
-unsigned long lastLcdRecoveryTime = 0;
-const unsigned long lcdRecoveryInterval = 10000; // 10-Second I2C Noise Recovery Routine
-
-// --- FUNCTION PROTOTYPES ---
+// --- FUNCTION DECLARATIONS ---
 void bootLcdScreen();
 void initGsmModem();
 void sendEmergencySms(const char* message);
-void executeFsmLogic(int gasVal, bool flameDetected, float temp, float hum);
 void refreshLcdBuffer(const char* line1, const char* line2);
-void pollMutePushbutton();
 void transmitTelemetry(int gasVal, bool flameDetected, float temp, float hum);
 
 void setup() {
-  // 1. Initialize Hardware Serial for USB Web-Serial & Telemetry Link
+  // 1. Hardware Serial for USB Web Dashboard
   Serial.begin(9600);
 
-  // 2. Initialize SoftwareSerial for Cellular GSM Modem
+  // 2. SoftwareSerial for SIM800L GSM
   gsmSerial.begin(9600);
 
-  // 3. Configure Input Pins
+  // 3. Inputs
   pinMode(PIN_MQ_GAS, INPUT);
-  pinMode(PIN_FLAME, INPUT);
-  pinMode(PIN_BTN_MUTE, INPUT_PULLUP);
+  pinMode(PIN_FLAME, INPUT_PULLUP); // Internal pullup ensures stable 1 when idle
 
-  // 4. Configure Output Pins & Establish Fail-Safe State
+  // 4. Outputs
   pinMode(PIN_BUZZER, OUTPUT);
   pinMode(PIN_RELAY_FAN, OUTPUT);
   pinMode(PIN_RELAY_PUMP, OUTPUT);
@@ -123,35 +108,36 @@ void setup() {
   pinMode(PIN_LED_BLUE, OUTPUT);
   pinMode(PIN_LED_RED, OUTPUT);
 
-  // Set relays to de-energized (Active-LOW: HIGH is OFF)
+  // Initial Safe State
   digitalWrite(PIN_RELAY_FAN, RELAY_INACTIVE);
   digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE);
   digitalWrite(PIN_BUZZER, LOW);
-  
-  // Power indicator LED: Safe Standby
+
   digitalWrite(PIN_LED_GREEN, HIGH);
   digitalWrite(PIN_LED_BLUE, LOW);
   digitalWrite(PIN_LED_RED, LOW);
 
-  // 5. Initialize DHT Climate Sensor
+  // 🔍 5. BOOT SELF-TEST: 0.4s Pump Relay Click Confirmation!
+  digitalWrite(PIN_RELAY_PUMP, RELAY_ACTIVE);   // Click ON (Confirms Pin 6 connection!)
+  delay(400);
+  digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE); // Click OFF
+
+  // 6. Initialize Sensors & LCD
   dht.begin();
-
-  // 6. Execute LCD Hardware Boot & Recovery Sequence
   bootLcdScreen();
-  refreshLcdBuffer("SMART KITCHEN", "SYSTEM BOOTING");
+  refreshLcdBuffer("SAFETY-FI 96X   ", "INITIALIZING... ");
 
-  // 7. Initialize SIM800L Cellular Modem
+  // 7. Initialize GSM
   initGsmModem();
 
-  refreshLcdBuffer("SYSTEM ONLINE", "FSM SUPERVISED");
-  delay(1200);
+  refreshLcdBuffer("SYSTEM ONLINE   ", "SENTINEL ARMED  ");
+  delay(800);
 }
 
 void loop() {
-  // 1. Non-Blocking Tactile Mute Button Polling (Debounced)
-  pollMutePushbutton();
+  unsigned long currentMillis = millis();
 
-  // 2. Process Bidirectional Commands from Web Dashboard (e.g., MUTE override)
+  // Web Dashboard Mute Command check
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
@@ -161,136 +147,141 @@ void loop() {
     }
   }
 
-  unsigned long currentMillis = millis();
-
-  // 3. Periodic 10-Second I2C Noise Recovery Sequence (Prevents PCF8574 Lockup)
-  if (currentMillis - lastLcdRecoveryTime >= lcdRecoveryInterval) {
-    lastLcdRecoveryTime = currentMillis;
-    if (currentState == STATE_SAFE) {
-      bootLcdScreen();
-    }
+  // 1. DHT Climate Reading (Every 2 seconds)
+  if (currentMillis - lastDhtRead >= 2000) {
+    lastDhtRead = currentMillis;
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    if (!isnan(t) && t > 0.0 && t < 90.0) lastTemp = t;
+    if (!isnan(h) && h > 0.0 && h <= 100.0) lastHum = h;
   }
 
-  // 4. Primary 1 Hz Telemetry & FSM Evaluation Loop
-  if (currentMillis - lastSensorReadTime >= sensorInterval) {
-    lastSensorReadTime = currentMillis;
+  // 2. ULTRA-FAST 100ms REACTIVE CONTROL LOOP
+  if (currentMillis - lastFastCheck >= 100) {
+    lastFastCheck = currentMillis;
 
-    // Read Hardware Sensor Signals
-    int gasVal = analogRead(PIN_MQ_GAS);
+    gasVal = analogRead(PIN_MQ_GAS);
     int flameRaw = digitalRead(PIN_FLAME);
-    bool flameDetected = (flameRaw == LOW); // Optical sensor triggers LOW on combustion IR
+    bool flameDetected = (flameRaw == LOW); // LOW indicates active combustion flame
 
-    float temp = dht.readTemperature();
-    float hum = dht.readHumidity();
+    // Latch timestamp if active flame detected right now
+    if (flameDetected) {
+      lastFireSeenTime = currentMillis;
+    }
 
-    // Fallback values if 1-Wire check fails
-    if (isnan(temp)) temp = 27.0;
-    if (isnan(hum)) hum = 48.0;
+    // Check if flame is active OR within the 3-second sprinkler run latch
+    bool fireActiveOrLatched = (flameDetected || ((currentMillis - lastFireSeenTime) < PUMP_MIN_DURATION && lastFireSeenTime > 0));
 
-    // Execute Deterministic FSM State Transitions
-    executeFsmLogic(gasVal, flameDetected, temp, hum);
+    // ====================================================================
+    // FINITE STATE MACHINE WITH 3-SECOND PUMP LATCH & AUTO-RESET
+    // ====================================================================
 
-    // Stream Structured Telemetry to USB Serial (Universal Comma-Delimited & JSON)
-    transmitTelemetry(gasVal, flameDetected, temp, hum);
-  }
-}
+    SystemState previousState = currentState;
 
-/*
- * ====================================================================================================
- * FINITE STATE MACHINE (FSM) DECISION LOGIC
- * ====================================================================================================
- */
-void executeFsmLogic(int gasVal, bool flameDetected, float temp, float hum) {
-  // Determine Next State based on Hazard Priority Hierarchy (Fire > Gas > Safe)
-  if (flameDetected) {
-    currentState = STATE_FIRE_EMERGENCY;
-  } else if (gasVal > GAS_THRESHOLD) {
-    currentState = STATE_GAS_LEAK;
-  } else {
-    currentState = STATE_SAFE;
-    buzzerMuted = false; // Reset mute latch upon returning to safe environment
-  }
+    // CASE 1: ACTIVE FIRE HAZARD (Runs for minimum 3 seconds)
+    if (fireActiveOrLatched) {
+      currentState = STATE_FIRE_EMERGENCY;
 
-  // Execute State-Specific Actuation
-  switch (currentState) {
-    case STATE_SAFE:
-      // Status LEDs: Green ON, Blue/Red OFF
+      // Actuators: Water Sprinkler ON, Fan Forced OFF
+      digitalWrite(PIN_RELAY_PUMP, RELAY_ACTIVE);   // PUMP SOLID ON (Pin 6 -> LOW)!
+      digitalWrite(PIN_RELAY_FAN, RELAY_INACTIVE);  // FAN OFF (Prevents feeding fire)
+      
+      // LEDs & Siren
+      digitalWrite(PIN_LED_GREEN, LOW);
+      digitalWrite(PIN_LED_BLUE, LOW);
+      digitalWrite(PIN_LED_RED, HIGH);
+      if (!buzzerMuted) digitalWrite(PIN_BUZZER, HIGH);
+
+      // Instant LCD Alert
+      char l1[17] = "! FIRE ALERT !  ";
+      char l2[17];
+      snprintf(l2, sizeof(l2), "T:%dC PUMP:ACTIVE", (int)lastTemp);
+      refreshLcdBuffer(l1, l2);
+
+      // Non-blocking SMS Alert (Sends once, 30s cooldown)
+      if (currentMillis - lastFireSmsTime >= 30000) {
+        lastFireSmsTime = currentMillis;
+        char smsMsg[140];
+        snprintf(smsMsg, sizeof(smsMsg), "CRITICAL: Active Fire Flame Detected in Kitchen! Temp: %dC. Water Sprinkler ACTIVATED!", (int)lastTemp);
+        sendEmergencySms(smsMsg);
+      }
+    }
+
+    // CASE 2: GAS / SMOKE LEAKAGE HAZARD
+    else if (gasVal > GAS_THRESHOLD) {
+      currentState = STATE_GAS_LEAK;
+
+      // Actuators: Exhaust Fan ON, Pump OFF
+      digitalWrite(PIN_RELAY_FAN, RELAY_ACTIVE);    // EXHAUST FAN ENGAGED!
+      digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE); // PUMP OFF
+
+      // LEDs & Siren
+      digitalWrite(PIN_LED_GREEN, LOW);
+      digitalWrite(PIN_LED_BLUE, HIGH);
+      digitalWrite(PIN_LED_RED, LOW);
+      if (!buzzerMuted) digitalWrite(PIN_BUZZER, HIGH);
+
+      // Instant LCD Alert
+      char l1[17] = "! GAS LEAKAGE ! ";
+      char l2[17];
+      snprintf(l2, sizeof(l2), "G:%-4d FAN:ACTIVE", gasVal);
+      refreshLcdBuffer(l1, l2);
+
+      // Non-blocking SMS Alert (Sends once, 30s cooldown)
+      if (currentMillis - lastGasSmsTime >= 30000) {
+        lastGasSmsTime = currentMillis;
+        char smsMsg[140];
+        snprintf(smsMsg, sizeof(smsMsg), "ALERT: Kitchen Gas Leakage Detected! Gas: %d ADC. Exhaust Fan ACTIVATED! Evacuate immediately!", gasVal);
+        sendEmergencySms(smsMsg);
+      }
+    }
+
+    // CASE 3: SAFE STANDBY (AUTOMATIC INSTANT RESET AFTER 3-SECOND LATCH EXPIRES!)
+    else {
+      currentState = STATE_SAFE;
+      buzzerMuted = false;
+
+      // Actuators: Relays & Buzzer Instantly Turned OFF
+      digitalWrite(PIN_RELAY_FAN, RELAY_INACTIVE);
+      digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE); // PUMP OFF (Pin 6 -> HIGH)
+      digitalWrite(PIN_BUZZER, LOW);
+
+      // Status LEDs: Green ON, others OFF
       digitalWrite(PIN_LED_GREEN, HIGH);
       digitalWrite(PIN_LED_BLUE, LOW);
       digitalWrite(PIN_LED_RED, LOW);
 
-      // Actuators: Relays De-energized (HIGH), Buzzer Silent
-      digitalWrite(PIN_RELAY_FAN, RELAY_INACTIVE);
-      digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE);
-      digitalWrite(PIN_BUZZER, LOW);
+      // Permanent Normal Telemetry Display
+      int tInt = (int)lastTemp;
+      int tDec = (int)((lastTemp - tInt) * 10);
+      if (tDec < 0) tDec = -tDec;
+      int hInt = (int)lastHum;
 
-      // LCD Display: Live Climate & Gas Telemetry
       char l1[17];
       char l2[17];
-      snprintf(l1, sizeof(l1), "T:%.0fC  H:%.0f%%", temp, hum);
-      snprintf(l2, sizeof(l2), "Gas:%d [Safe]", gasVal);
+      snprintf(l1, sizeof(l1), "T:%d.%dC  H:%d%%   ", tInt, tDec, hInt);
+      snprintf(l2, sizeof(l2), "GAS:%-4d  [SAFE]", gasVal);
       refreshLcdBuffer(l1, l2);
-      break;
+    }
 
-    case STATE_GAS_LEAK:
-      // Status LEDs: Blue ON, Green/Red OFF
-      digitalWrite(PIN_LED_GREEN, LOW);
-      digitalWrite(PIN_LED_BLUE, HIGH);
-      digitalWrite(PIN_LED_RED, LOW);
-
-      // Actuators: Exhaust Fan Active (LOW), Pump Off, Buzzer Active
-      digitalWrite(PIN_RELAY_FAN, RELAY_ACTIVE);
-      digitalWrite(PIN_RELAY_PUMP, RELAY_INACTIVE);
-
-      if (!buzzerMuted) {
-        digitalWrite(PIN_BUZZER, HIGH);
-      } else {
-        digitalWrite(PIN_BUZZER, LOW);
-      }
-
-      refreshLcdBuffer("! GAS LEAKAGE !", "EXHAUST FAN ON");
-
-      // One-Shot SMS Dispatch on State Entry
-      if (previousState != STATE_GAS_LEAK) {
-        sendEmergencySms("EMERGENCY: Toxic Gas/Smoke Leakage detected (>400 ADC)! Exhaust Fan Active. Evacuate immediately!");
-      }
-      break;
-
-    case STATE_FIRE_EMERGENCY:
-      // Status LEDs: Red ON, Green/Blue OFF
-      digitalWrite(PIN_LED_GREEN, LOW);
-      digitalWrite(PIN_LED_BLUE, LOW);
-      digitalWrite(PIN_LED_RED, HIGH);
-
-      // Actuators: Sprinkler Pump Active (LOW)
-      digitalWrite(PIN_RELAY_PUMP, RELAY_ACTIVE);
-      
-      // CRITICAL SAFETY INTERLOCK: Exhaust fan is strictly FORCED OFF to prevent feeding fresh oxygen to flames!
-      digitalWrite(PIN_RELAY_FAN, RELAY_INACTIVE);
-
-      if (!buzzerMuted) {
-        digitalWrite(PIN_BUZZER, HIGH);
-      } else {
-        digitalWrite(PIN_BUZZER, LOW);
-      }
-
-      refreshLcdBuffer("! FIRE DETECTED !", "SPRINKLER ON");
-
-      // One-Shot SMS Dispatch on State Entry
-      if (previousState != STATE_FIRE_EMERGENCY) {
-        sendEmergencySms("CRITICAL HAZARD: Active combustion flame detected at Kitchen Station! Water Sprinkler Engaged!");
-      }
-      break;
+    // ⚡ INSTANT TELEMETRY PUSH: If state transitions (fire tripped, gas tripped, or reset), push immediately (0ms lag)!
+    if (currentState != previousState) {
+      transmitTelemetry(gasVal, fireActiveOrLatched, lastTemp, lastHum);
+      lastTelemetryStream = currentMillis;
+    }
   }
 
-  previousState = currentState;
+  // 3. Web Telemetry Stream to USB (High-speed 200ms = 5 Hz for ultra-smooth dashboard gauges)
+  if (currentMillis - lastTelemetryStream >= 200) {
+    lastTelemetryStream = currentMillis;
+    bool fireActiveOrLatched = ((digitalRead(PIN_FLAME) == LOW) || ((currentMillis - lastFireSeenTime) < PUMP_MIN_DURATION && lastFireSeenTime > 0));
+    transmitTelemetry(gasVal, fireActiveOrLatched, lastTemp, lastHum);
+  }
 }
 
-/*
- * ====================================================================================================
- * I2C LCD HARDWARE RECOVERY ROUTINE
- * ====================================================================================================
- */
+// ====================================================================
+// LCD DRIVER (Flicker-Free Direct Overwrite)
+// ====================================================================
 void bootLcdScreen() {
   Wire.begin();
   lcd.init();
@@ -299,94 +290,51 @@ void bootLcdScreen() {
 }
 
 void refreshLcdBuffer(const char* line1, const char* line2) {
-  static char prev1[17] = "";
-  static char prev2[17] = "";
-
-  if (strcmp(prev1, line1) != 0) {
-    lcd.setCursor(0, 0);
-    lcd.print("                ");
-    lcd.setCursor(0, 0);
-    lcd.print(line1);
-    strncpy(prev1, line1, sizeof(prev1));
-  }
-
-  if (strcmp(prev2, line2) != 0) {
-    lcd.setCursor(0, 1);
-    lcd.print("                ");
-    lcd.setCursor(0, 1);
-    lcd.print(line2);
-    strncpy(prev2, line2, sizeof(prev2));
-  }
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
 }
 
-/*
- * ====================================================================================================
- * TACTILE MUTE BUTTON INTERRUPT-EMULATING DEBOUNCE
- * ====================================================================================================
- */
-void pollMutePushbutton() {
-  int currentRead = digitalRead(PIN_BTN_MUTE);
-
-  if (currentRead != lastBtnState) {
-    lastDebounceTime = millis();
-  }
-
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    if (currentRead == LOW && lastBtnState == HIGH) {
-      buzzerMuted = !buzzerMuted;
-      if (buzzerMuted) {
-        digitalWrite(PIN_BUZZER, LOW);
-      } else if (currentState != STATE_SAFE) {
-        digitalWrite(PIN_BUZZER, HIGH);
-      }
-    }
-  }
-
-  lastBtnState = currentRead;
-}
-
-/*
- * ====================================================================================================
- * GSM SIM800L CELLULAR DRIVER & AT TELEMETRY
- * ====================================================================================================
- */
+// ====================================================================
+// SIM800L GSM DRIVER
+// ====================================================================
 void initGsmModem() {
+  delay(500);
   gsmSerial.println("AT");
   delay(300);
-  gsmSerial.println("AT+CMGF=1");          // Select SMS Text Mode
+  gsmSerial.println("AT+CMGF=1");
   delay(300);
-  gsmSerial.println("AT+CNMI=1,2,0,0,0");  // New message direct indication
+  gsmSerial.println("AT+CSCS=\"GSM\"");
+  delay(300);
+  gsmSerial.println("AT+CNMI=1,2,0,0,0");
   delay(300);
 }
 
 void sendEmergencySms(const char* message) {
+  gsmSerial.println("AT+CMGF=1");
+  delay(200);
+
   gsmSerial.print("AT+CMGS=\"");
   gsmSerial.print(EMERGENCY_PHONE);
   gsmSerial.println("\"");
-  delay(400);
+  delay(300);
 
   gsmSerial.print(message);
   delay(200);
 
-  // Send ASCII 26 (Ctrl+Z) to finalize and transmit SMS packet
-  gsmSerial.write(26);
-  delay(800);
+  gsmSerial.write(26); // ASCII 26 (Ctrl+Z)
+  delay(500);
 
-  // Transmit dispatch event confirmation to USB console
-  Serial.print("{\"event\":\"SMS_DISPATCHED\",\"recipient\":\"");
+  Serial.print("{\"event\":\"SMS_DISPATCHED\",\"phone\":\"");
   Serial.print(EMERGENCY_PHONE);
-  Serial.print("\",\"message\":\"");
-  Serial.print(message);
   Serial.println("\"}");
 }
 
-/*
- * ====================================================================================================
- * TELEMETRY SERIAL STREAM
- * ====================================================================================================
- */
+// ====================================================================
+// LIVE TELEMETRY TRANSMISSION (To Web Dashboard & Serial Monitor)
+// ====================================================================
 void transmitTelemetry(int gasVal, bool flameDetected, float temp, float hum) {
-  // Structured JSON format for web parser
   Serial.print("{\"gas\":");
   Serial.print(gasVal);
   Serial.print(",\"flame\":");
