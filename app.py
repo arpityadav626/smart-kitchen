@@ -30,6 +30,8 @@ state = {
     "temperature": 27.5,
     "humidity": 52.0,
     "flame": False,       # True = Fire detected (LOW on sensor)
+    "raw_flame": False,   # Instantaneous raw sensor detection
+    "flame_raw": 1,       # 1 = Normal/Standby, 0 = Active Flame
     
     # Finite State Machine: 0 = SAFE, 1 = GAS_LEAK, 2 = FIRE_EMERGENCY
     "fsm_state": 0,
@@ -124,15 +126,20 @@ HOLD_DURATION = 5.0 # Minimum 5-second alarm latch hold
 last_fire_seen = 0.0
 last_gas_seen = 0.0
 
-def update_fsm_logic(hw_state=None):
+def update_fsm_logic(hw_state=None, flame_input=None):
     """Calculates or applies FSM State and outputs based on sensor values or hardware state with 5-second latch"""
     global last_fire_seen, last_gas_seen
     now = time.time()
     gas = state["gas"]
-    flame = state["flame"]
+    
+    if flame_input is not None:
+        flame_active = bool(flame_input)
+    else:
+        flame_active = state.get("raw_flame", False)
+
     prev_fsm = state["fsm_state"]
 
-    is_fire = (hw_state == 2) or flame
+    is_fire = (hw_state == 2) or flame_active
     is_gas = (hw_state == 1) or (gas > 400)
 
     if is_fire:
@@ -142,6 +149,12 @@ def update_fsm_logic(hw_state=None):
 
     fire_active = is_fire or ((now - last_fire_seen < HOLD_DURATION) and last_fire_seen > 0)
     gas_active = is_gas or ((now - last_gas_seen < HOLD_DURATION) and last_gas_seen > 0)
+
+    # Clean latch auto-reset when hold duration expires
+    if not is_fire and last_fire_seen > 0 and (now - last_fire_seen >= HOLD_DURATION):
+        last_fire_seen = 0.0
+    if not is_gas and last_gas_seen > 0 and (now - last_gas_seen >= HOLD_DURATION):
+        last_gas_seen = 0.0
 
     if fire_active:
         target_fsm = 2
@@ -196,6 +209,7 @@ def update_fsm_logic(hw_state=None):
         # State 0: Safe State
         state["fsm_state"] = 0
         state["flame"] = False
+        state["raw_flame"] = False
         state["fsm_label"] = "SAFE_STANDBY"
         state["led_green"] = True
         state["led_blue"] = False
@@ -264,7 +278,9 @@ def serial_worker():
                                     if "hum" in data:
                                         state["humidity"] = float(data["hum"])
                                     if "flame" in data:
-                                        state["flame"] = bool(data["flame"])
+                                        state["raw_flame"] = bool(data["flame"])
+                                    if "flame_raw" in data:
+                                        state["flame_raw"] = int(data["flame_raw"])
                                     if "muted" in data:
                                         state["buzzer_muted"] = bool(data["muted"])
                                     if "fan" in data:
@@ -273,7 +289,7 @@ def serial_worker():
                                         state["water_pump"] = str(data["pump"]).upper()
                                     
                                     hw_state = data.get("state")
-                                    update_fsm_logic(hw_state)
+                                    update_fsm_logic(hw_state, flame_input=state["raw_flame"])
 
                                     if "sms" in data:
                                         trigger_sms_dispatch(data.get("sms_type", "HARDWARE_GSM"), data["sms"])
@@ -303,8 +319,10 @@ def serial_worker():
                     state["gas"] = max(80, min(240, state["gas"] + random.randint(-3, 3)))
                     state["temperature"] = round(max(24.0, min(31.0, state["temperature"] + random.uniform(-0.1, 0.1))), 1)
                     state["humidity"] = round(max(45.0, min(65.0, state["humidity"] + random.uniform(-0.2, 0.2))), 1)
-                    update_fsm_logic()
-                    state["last_update"] = time.time()
+                
+                # Evaluate FSM latch transitions on every tick!
+                update_fsm_logic()
+                state["last_update"] = time.time()
             time.sleep(1)
 
 worker = threading.Thread(target=serial_worker, daemon=True)
@@ -319,6 +337,7 @@ async def index(request: Request):
 @app.get("/api/data")
 async def get_data():
     with lock:
+        update_fsm_logic()
         return JSONResponse(content=state)
 
 @app.get("/api/ports")
@@ -353,25 +372,33 @@ async def simulate_scenario(request: Request):
             last_gas_seen = 0.0
             state["gas"] = 120
             state["flame"] = False
+            state["raw_flame"] = False
             state["buzzer_muted"] = False
             add_log("[SIMULATOR] Restored Normal Kitchen Parameters (Gas: 120 PPM, Flame: Safe)")
         elif scenario == "gas_leak":
             last_gas_seen = time.time()
             state["gas"] = 650
             state["flame"] = False
+            state["raw_flame"] = False
             add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 650 PPM > Threshold 400) - 5s Hold Active")
         elif scenario == "fire":
             last_fire_seen = time.time()
+            state["raw_flame"] = True
             state["flame"] = True
             add_log("[SIMULATOR] Simulated Optical Flame Detection (Pin 8 -> LOW) - 5s Hold Active")
+            def clear_sim_flame():
+                time.sleep(1.0)
+                with lock:
+                    state["raw_flame"] = False
+            threading.Thread(target=clear_sim_flame, daemon=True).start()
         elif scenario == "custom":
             if "gas" in body:
                 state["gas"] = int(body["gas"])
                 if state["gas"] > 400:
                     last_gas_seen = time.time()
             if "flame" in body:
-                state["flame"] = bool(body["flame"])
-                if state["flame"]:
+                state["raw_flame"] = bool(body["flame"])
+                if state["raw_flame"]:
                     last_fire_seen = time.time()
             if "temp" in body:
                 state["temperature"] = float(body["temp"])

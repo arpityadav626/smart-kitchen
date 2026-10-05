@@ -163,10 +163,22 @@ void loop() {
     lastFastCheck = currentMillis;
 
     gasVal = analogRead(PIN_MQ_GAS);
-    int flameRaw = digitalRead(PIN_FLAME);
-    bool flameDetected = (flameRaw == LOW); // LOW indicates active combustion flame
 
-    // Latch timestamp if active flame detected right now
+    // --- ROBUST FLAME SENSOR DEBOUNCE FILTER ---
+    // Glitches, relay EMI, and ambient photon spikes last < 100ms.
+    // Require 3 consecutive confirmed LOW samples (300ms continuous) to trigger fire alert!
+    static uint8_t flameConsecutiveCount = 0;
+    int flameRaw = digitalRead(PIN_FLAME);
+
+    if (flameRaw == LOW) {
+      if (flameConsecutiveCount < 10) flameConsecutiveCount++;
+    } else {
+      flameConsecutiveCount = 0;
+    }
+
+    bool flameDetected = (flameConsecutiveCount >= 3); // Must be LOW for >= 300ms continuously!
+
+    // Latch timestamp ONLY if flame is genuinely confirmed right now
     if (flameDetected) {
       lastFireSeenTime = currentMillis;
     }
@@ -174,6 +186,14 @@ void loop() {
     // Latch timestamp if gas leak detected right now
     if (gasVal > GAS_THRESHOLD) {
       lastGasSeenTime = currentMillis;
+    }
+
+    // Clean latch reset once hold duration expires and no active hazard
+    if (!flameDetected && lastFireSeenTime > 0 && ((currentMillis - lastFireSeenTime) >= PUMP_MIN_DURATION)) {
+      lastFireSeenTime = 0;
+    }
+    if ((gasVal <= GAS_THRESHOLD) && lastGasSeenTime > 0 && ((currentMillis - lastGasSeenTime) >= GAS_MIN_DURATION)) {
+      lastGasSeenTime = 0;
     }
 
     // Check if flame is active OR within the 5-second sprinkler run latch
@@ -345,10 +365,13 @@ void sendEmergencySms(const char* message) {
 // LIVE TELEMETRY TRANSMISSION (To Web Dashboard & Serial Monitor)
 // ====================================================================
 void transmitTelemetry(int gasVal, bool flameDetected, float temp, float hum) {
+  int flameRaw = digitalRead(PIN_FLAME);
   Serial.print("{\"gas\":");
   Serial.print(gasVal);
   Serial.print(",\"flame\":");
   Serial.print(flameDetected ? "true" : "false");
+  Serial.print(",\"flame_raw\":");
+  Serial.print(flameRaw);
   Serial.print(",\"temp\":");
   Serial.print(temp, 1);
   Serial.print(",\"hum\":");

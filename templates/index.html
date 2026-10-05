@@ -2253,7 +2253,12 @@
                 rawTrigger = 1;
             }
 
-            // 5-second latch hold: extend latch whenever hazard is actively detected
+            // If hardware / explicit state is 0, clear simulated flame flag
+            if (explicitState === 0) {
+                flameDetected = false;
+            }
+
+            // 5-second latch hold: extend latch ONLY while raw hazard is actively present
             if (rawTrigger === 2) {
                 latchedHazardState = 2;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
@@ -2264,14 +2269,15 @@
                 }
             }
 
-            // Check if 5-second latch hold is still active
-            if (now < latchedHazardUntil) {
+            // Check if active raw trigger OR 5-second latch hold is still active
+            if (rawTrigger > 0) {
+                systemState = rawTrigger;
+            } else if (now < latchedHazardUntil) {
                 systemState = latchedHazardState;
-                if (systemState === 2) flameDetected = true;
             } else {
                 latchedHazardState = 0;
-                systemState = rawTrigger;
-                if (systemState === 0) flameDetected = false;
+                systemState = 0;
+                flameDetected = false; // Reset simulated/held flame flag
             }
 
             if (systemState !== prev) {
@@ -2542,16 +2548,29 @@
                 flameDetected = true;
                 latchedHazardState = 2;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+                setTimeout(() => {
+                    flameDetected = false;
+                    evalFsm();
+                }, 800);
             } else if (target === 1) {
                 flameDetected = false;
                 gasAdc = 650;
-                document.getElementById('gasSlider').value = 650;
+                const sl = document.getElementById('gasSlider');
+                if (sl) sl.value = 650;
                 latchedHazardState = 1;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
+                setTimeout(() => {
+                    if (gasAdc === 650) {
+                        gasAdc = 85;
+                        if (sl) sl.value = 85;
+                        evalFsm();
+                    }
+                }, 1000);
             } else {
                 flameDetected = false;
                 gasAdc = 85;
-                document.getElementById('gasSlider').value = 85;
+                const sl = document.getElementById('gasSlider');
+                if (sl) sl.value = 85;
                 latchedHazardState = 0;
                 latchedHazardUntil = 0;
             }
