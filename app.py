@@ -139,21 +139,26 @@ def update_fsm_logic(hw_state=None, flame_input=None):
 
     prev_fsm = state["fsm_state"]
 
-    is_fire = (hw_state == 2) or flame_active
-    is_gas = (hw_state == 1) or (gas > 400)
-
-    if is_fire:
+    # Start strict 5-second timer on initial flame trigger
+    if (flame_active or hw_state == 2) and last_fire_seen == 0.0:
         last_fire_seen = now
+
+    is_gas = (hw_state == 1) or (gas > 400)
     if is_gas:
         last_gas_seen = now
 
-    fire_active = is_fire or ((now - last_fire_seen < HOLD_DURATION) and last_fire_seen > 0)
-    gas_active = is_gas or ((now - last_gas_seen < HOLD_DURATION) and last_gas_seen > 0)
+    # STRICT 5-SECOND CHECK: Once 5 seconds elapse, fire immediately shuts off!
+    fire_active = False
+    if last_fire_seen > 0.0:
+        if (now - last_fire_seen) < HOLD_DURATION:
+            fire_active = True
+        else:
+            # 5 seconds expired -> TURANT BAND!
+            last_fire_seen = 0.0
+            state["raw_flame"] = False
 
-    # Clean latch auto-reset when hold duration expires
-    if not is_fire and last_fire_seen > 0 and (now - last_fire_seen >= HOLD_DURATION):
-        last_fire_seen = 0.0
-    if not is_gas and last_gas_seen > 0 and (now - last_gas_seen >= HOLD_DURATION):
+    gas_active = is_gas or ((now - last_gas_seen < HOLD_DURATION) and last_gas_seen > 0.0)
+    if not is_gas and last_gas_seen > 0.0 and (now - last_gas_seen >= HOLD_DURATION):
         last_gas_seen = 0.0
 
     if fire_active:

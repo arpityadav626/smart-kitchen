@@ -79,6 +79,11 @@ unsigned long lastDhtRead = 0;         // 2000ms DHT sensor read
 unsigned long lastFireSeenTime = 0;    // 5-second minimum pump runtime latch
 unsigned long lastGasSeenTime = 0;     // 5-second minimum fan runtime latch
 
+// --- STRICT 5-SECOND FLAME TIMER ---
+bool fireTimerActive = false;
+unsigned long fireTimerStart = 0;
+bool flameMustClear = false;
+
 unsigned long lastFireSmsTime = 0;     // SMS rate limiting (30s cooldown)
 unsigned long lastGasSmsTime = 0;
 
@@ -164,40 +169,30 @@ void loop() {
 
     gasVal = analogRead(PIN_MQ_GAS);
 
-    // --- ROBUST FLAME SENSOR DEBOUNCE FILTER ---
-    // Glitches, relay EMI, and ambient photon spikes last < 100ms.
-    // Require 3 consecutive confirmed LOW samples (300ms continuous) to trigger fire alert!
-    static uint8_t flameConsecutiveCount = 0;
+    // --- INSTANT FLAME SENSE + STRICT 5-SECOND ONE-SHOT TIMER ---
     int flameRaw = digitalRead(PIN_FLAME);
 
+    // If flame is sensed (Pin 8 LOW) and timer is not currently running
     if (flameRaw == LOW) {
-      if (flameConsecutiveCount < 10) flameConsecutiveCount++;
+      if (!fireTimerActive && !flameMustClear) {
+        fireTimerActive = true;
+        fireTimerStart = currentMillis;
+        flameMustClear = true; // Lock until flame clears to prevent non-stop loop
+      }
     } else {
-      flameConsecutiveCount = 0;
+      // Flame moved away (Pin 8 HIGH) -> arm ready for next trigger
+      flameMustClear = false;
     }
 
-    bool flameDetected = (flameConsecutiveCount >= 3); // Must be LOW for >= 300ms continuously!
-
-    // Latch timestamp ONLY if flame is genuinely confirmed right now
-    if (flameDetected) {
-      lastFireSeenTime = currentMillis;
+    // STRICT 5-SECOND TIMER: Exactly 5000ms, then TURANT BAND!
+    if (fireTimerActive) {
+      if (currentMillis - fireTimerStart >= 5000) {
+        fireTimerActive = false; // 5 seconds expired -> IMMEDIATELY SHUT OFF!
+        fireTimerStart = 0;
+      }
     }
 
-    // Latch timestamp if gas leak detected right now
-    if (gasVal > GAS_THRESHOLD) {
-      lastGasSeenTime = currentMillis;
-    }
-
-    // Clean latch reset once hold duration expires and no active hazard
-    if (!flameDetected && lastFireSeenTime > 0 && ((currentMillis - lastFireSeenTime) >= PUMP_MIN_DURATION)) {
-      lastFireSeenTime = 0;
-    }
-    if ((gasVal <= GAS_THRESHOLD) && lastGasSeenTime > 0 && ((currentMillis - lastGasSeenTime) >= GAS_MIN_DURATION)) {
-      lastGasSeenTime = 0;
-    }
-
-    // Check if flame is active OR within the 5-second sprinkler run latch
-    bool fireActiveOrLatched = (flameDetected || ((currentMillis - lastFireSeenTime) < PUMP_MIN_DURATION && lastFireSeenTime > 0));
+    bool fireActiveOrLatched = fireTimerActive;
 
     // Check if gas is active OR within the 5-second exhaust fan run latch
     bool gasActiveOrLatched = (gasVal > GAS_THRESHOLD || ((currentMillis - lastGasSeenTime) < GAS_MIN_DURATION && lastGasSeenTime > 0));

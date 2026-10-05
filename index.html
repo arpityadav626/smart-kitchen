@@ -2258,26 +2258,23 @@
                 flameDetected = false;
             }
 
-            // 5-second latch hold: extend latch ONLY while raw hazard is actively present
-            if (rawTrigger === 2) {
+            // Start strict 5-second one-shot timer on initial trigger
+            if (rawTrigger === 2 && latchedHazardUntil === 0) {
                 latchedHazardState = 2;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
-            } else if (rawTrigger === 1) {
-                if (latchedHazardState !== 2 || now >= latchedHazardUntil) {
-                    latchedHazardState = 1;
-                    latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
-                }
+            } else if (rawTrigger === 1 && latchedHazardUntil === 0) {
+                latchedHazardState = 1;
+                latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
             }
 
-            // Check if active raw trigger OR 5-second latch hold is still active
-            if (rawTrigger > 0) {
-                systemState = rawTrigger;
-            } else if (now < latchedHazardUntil) {
+            // STRICT 5-SECOND TIMER: Runs for exactly 5000ms, then TURANT BAND!
+            if (latchedHazardUntil > 0 && now < latchedHazardUntil) {
                 systemState = latchedHazardState;
             } else {
                 latchedHazardState = 0;
+                latchedHazardUntil = 0;
                 systemState = 0;
-                flameDetected = false; // Reset simulated/held flame flag
+                flameDetected = false; // Immediately clear flame flag
             }
 
             if (systemState !== prev) {
