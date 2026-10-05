@@ -143,7 +143,7 @@ def update_fsm_logic(hw_state=None, flame_input=None):
     if (flame_active or hw_state == 2) and last_fire_seen == 0.0:
         last_fire_seen = now
 
-    is_gas = (hw_state == 1) or (gas > 400)
+    is_gas = (hw_state == 1) or (gas > 300)
     if is_gas:
         last_gas_seen = now
 
@@ -207,7 +207,7 @@ def update_fsm_logic(hw_state=None, flame_input=None):
             add_log(f"[WARNING ALERT] ⚠️ Gas leakage ({gas} PPM)! Exhaust fan engaged.")
             trigger_sms_dispatch(
                 "GAS_LEAKAGE",
-                f"WARNING: LPG Gas concentration {gas} PPM (threshold 400). Exhaust fan active. Ventilate immediately!"
+                f"WARNING: LPG Gas concentration {gas} PPM (threshold 300). Exhaust fan active. Ventilate immediately!"
             )
 
     else:
@@ -385,7 +385,7 @@ async def simulate_scenario(request: Request):
             state["gas"] = 650
             state["flame"] = False
             state["raw_flame"] = False
-            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 650 PPM > Threshold 400) - 5s Hold Active")
+            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 650 PPM > Threshold 300) - 5s Hold Active")
         elif scenario == "fire":
             last_fire_seen = time.time()
             state["raw_flame"] = True
@@ -399,7 +399,7 @@ async def simulate_scenario(request: Request):
         elif scenario == "custom":
             if "gas" in body:
                 state["gas"] = int(body["gas"])
-                if state["gas"] > 400:
+                if state["gas"] > 300:
                     last_gas_seen = time.time()
             if "flame" in body:
                 state["raw_flame"] = bool(body["flame"])
