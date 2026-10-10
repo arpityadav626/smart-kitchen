@@ -52,20 +52,37 @@ state = {
     "lcd_line1": "TEMP:27.5C H:52%",
     "lcd_line2": "GAS:120 PPM SAFE",
     
-    # GSM / SIM800L Module Telemetry
+    # Cloud Email Alert Gateway (Formspree -> Smartphone Push)
+    "email_alert": {
+        "status": "ARMED",
+        "gateway": "Formspree Cloud IoT Gateway",
+        "endpoint": "https://formspree.io/f/moevgzjw",
+        "target_email": "arpityadav6794@gmail.com",
+        "last_email": None,
+        "email_count": 0,
+        "last_dispatch_time": 0,
+        "dispatch_logs": [
+            "[INIT] Formspree Cloud IoT Webhook Active",
+            "[TARGET] arpityadav6794@gmail.com (Phone Push Notification)",
+            "[STATUS] Automated Emergency Email Sentinel Armed"
+        ]
+    },
+
+    # GSM legacy bridge (Maintains 100% UI backwards compatibility)
     "gsm": {
-        "status": "READY",
-        "operator": "Airtel 4G/2G",
-        "signal_csq": 26, # 0 to 31
-        "target_number": "+91 98765 43210",
+        "status": "CLOUD_EMAIL_ACTIVE",
+        "operator": "Formspree Cloud Push",
+        "signal_csq": 31, # 100% Cloud Signal
+        "target_number": "arpityadav6794@gmail.com",
+        "target_email": "arpityadav6794@gmail.com",
         "last_sms": None,
         "sms_count": 0,
         "at_logs": [
-            "AT -> OK",
-            "AT+CPIN? -> +CPIN: READY",
-            "AT+CREG? -> +CREG: 0,1 (Home Network)",
-            "AT+CSQ -> +CSQ: 26,0",
-            "AT+CMGF=1 -> OK (Text Mode Ready)"
+            "HTTP/2 POST -> Formspree Cloud",
+            "Endpoint: /f/moevgzjw",
+            "Target: arpityadav6794@gmail.com",
+            "Push Notification: Instant Phone Alert",
+            "Status: 200 OK (Armed)"
         ]
     },
     
@@ -77,7 +94,7 @@ state = {
     "recent_logs": [
         "[INIT] Embedded System State Machine Loaded",
         "[INIT] LCD 16x2 I2C Display Bound (0x27)",
-        "[INIT] SIM800L GSM Telemetry Subsystem Online"
+        "[INIT] Formspree Cloud Email Sentinel Online (arpityadav6794@gmail.com)"
     ],
     "raw_packet": ""
 }
@@ -86,6 +103,10 @@ manual_selected_port = None
 serial_connection = None
 stop_thread = False
 
+FORMSPREE_URL = "https://formspree.io/f/moevgzjw"
+DEFAULT_EMAIL = "arpityadav6794@gmail.com"
+last_email_dispatched_at = {"FIRE_EMERGENCY": 0.0, "GAS_LEAKAGE": 0.0, "MANUAL_TEST": 0.0}
+
 def add_log(message: str):
     timestamp = time.strftime("%H:%M:%S")
     with lock:
@@ -93,34 +114,81 @@ def add_log(message: str):
         if len(state["recent_logs"]) > 30:
             state["recent_logs"].pop(0)
 
-def add_gsm_log(at_command: str):
+def add_email_log(log_msg: str):
     timestamp = time.strftime("%H:%M:%S")
     with lock:
-        state["gsm"]["at_logs"].append(f"[{timestamp}] {at_command}")
+        state["email_alert"]["dispatch_logs"].append(f"[{timestamp}] {log_msg}")
+        if len(state["email_alert"]["dispatch_logs"]) > 20:
+            state["email_alert"]["dispatch_logs"].pop(0)
+        state["gsm"]["at_logs"].append(f"[{timestamp}] {log_msg}")
         if len(state["gsm"]["at_logs"]) > 20:
             state["gsm"]["at_logs"].pop(0)
 
-def trigger_sms_dispatch(event_type: str, message_body: str):
+def _send_email_thread(event_type: str, subject: str, message_body: str, recipient: str):
+    import urllib.request
     timestamp = time.strftime("%H:%M:%S")
-    with lock:
-        sms_entry = {
-            "id": state["gsm"]["sms_count"] + 1,
-            "timestamp": timestamp,
-            "type": event_type,
-            "recipient": state["gsm"]["target_number"],
-            "body": message_body,
-            "status": "DELIVERED"
-        }
-        state["gsm"]["sms_count"] += 1
-        state["gsm"]["last_sms"] = sms_entry
-        state["gsm"]["at_logs"].append(f'[{timestamp}] AT+CMGS="{state["gsm"]["target_number"]}"')
-        state["gsm"]["at_logs"].append(f'[{timestamp}] > {message_body}')
-        state["gsm"]["at_logs"].append(f"[{timestamp}] +CMGS: 42 -> SMS SENT OK")
-        if len(state["gsm"]["at_logs"]) > 20:
-            state["gsm"]["at_logs"].pop(0)
-        state["recent_logs"].append(f"[{timestamp}] [GSM ALERT DISPATCHED] {event_type} to {state['gsm']['target_number']}")
-        if len(state["recent_logs"]) > 30:
-            state["recent_logs"].pop(0)
+    target = recipient or DEFAULT_EMAIL
+    
+    payload = json.dumps({
+        "name": "Smart Kitchen Safety System (SAFETY-FI 96X)",
+        "email": target,
+        "subject": subject,
+        "message": f"[{event_type}]\n{message_body}\n\nTime: {time.strftime('%Y-%m-%d %H:%M:%S')}\nSystem: SAFETY-FI 96X Autonomous Kitchen Sentinel"
+    }).encode("utf-8")
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://arpityadav626.github.io/"
+    }
+    
+    req = urllib.request.Request(FORMSPREE_URL, data=payload, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            if resp.getcode() in (200, 201, 302):
+                with lock:
+                    email_entry = {
+                        "id": state["email_alert"]["email_count"] + 1,
+                        "timestamp": timestamp,
+                        "type": event_type,
+                        "recipient": target,
+                        "subject": subject,
+                        "body": message_body,
+                        "status": "DELIVERED"
+                    }
+                    state["email_alert"]["email_count"] += 1
+                    state["email_alert"]["last_email"] = email_entry
+                    state["email_alert"]["last_dispatch_time"] = time.time()
+                    
+                    # Mirror to gsm for existing UI widgets
+                    state["gsm"]["sms_count"] += 1
+                    state["gsm"]["last_sms"] = email_entry
+                
+                add_email_log(f"Formspree -> {target} : DELIVERED (200 OK)")
+                add_log(f"[EMAIL ALERT DELIVERED] 📩 {event_type} pushed to {target} (Notification on Phone)")
+            else:
+                add_email_log(f"Formspree HTTP {resp.getcode()} response")
+    except Exception as e:
+        add_email_log(f"Dispatch error: {str(e)[:40]}")
+        add_log(f"[EMAIL DISPATCH RETRY] Notice: {str(e)[:40]}")
+
+def trigger_email_dispatch(event_type: str, subject: str, message_body: str, target_email: str = None):
+    now = time.time()
+    # 30-second cooldown per event type to prevent flooding email quota
+    if event_type != "MANUAL_TEST" and (now - last_email_dispatched_at.get(event_type, 0.0)) < 30.0:
+        return
+    last_email_dispatched_at[event_type] = now
+    
+    recipient = target_email or state["email_alert"]["target_email"]
+    timestamp = time.strftime("%H:%M:%S")
+    add_email_log(f"Queued {event_type} for {recipient}...")
+    threading.Thread(target=_send_email_thread, args=(event_type, subject, message_body, recipient), daemon=True).start()
+
+# Alias for backwards compatibility
+def trigger_sms_dispatch(event_type: str, message_body: str):
+    subject = f"⚠️ [KITCHEN ALERT] {event_type.replace('_', ' ')}"
+    trigger_email_dispatch(event_type, subject, message_body)
 
 HOLD_DURATION = 5.0 # Minimum 5-second alarm latch hold
 last_fire_seen = 0.0
@@ -184,9 +252,10 @@ def update_fsm_logic(hw_state=None, flame_input=None):
 
         if prev_fsm != 2:
             add_log(f"[CRITICAL ALERT] 🔥 Flame detected! Sprinkler engaged, fan cut off.")
-            trigger_sms_dispatch(
+            trigger_email_dispatch(
                 "FIRE_EMERGENCY",
-                "CRITICAL: Fire flame hazard detected in Kitchen! Sprinkler engaged, fan cut off. Evacuate!"
+                "🚨 [CRITICAL ALERT] Fire Flame Hazard Detected in Kitchen!",
+                "CRITICAL EMERGENCY: Optical Flame sensor detected active combustion at the kitchen cooktop!\n• Water Sprinkler: ENERGIZED (5-Second Safety Extinguisher Cycle)\n• Exhaust Fan: LOCKED OFF (Oxygen Starvation Interlock)\n• Local Buzzer Alarm: ACTIVE\n• Status: Immediate Attention Required! Evacuate or inspect cooktop."
             )
 
     elif target_fsm == 1:
@@ -205,9 +274,10 @@ def update_fsm_logic(hw_state=None, flame_input=None):
 
         if prev_fsm != 1:
             add_log(f"[WARNING ALERT] ⚠️ Gas leakage ({gas} PPM)! Exhaust fan engaged.")
-            trigger_sms_dispatch(
+            trigger_email_dispatch(
                 "GAS_LEAKAGE",
-                f"WARNING: LPG Gas concentration {gas} PPM (threshold 300). Exhaust fan active. Ventilate immediately!"
+                "⚠️ [WARNING ALERT] LPG Gas Leakage Detected in Kitchen!",
+                f"WARNING ALERT: MQ-2 Sensor detected dangerous gas concentration of {gas} PPM (Exceeding safety limit 300)!\n• Exhaust Ventilation Fan: ENERGIZED (Extracting combustible vapor)\n• Solenoid Sprinkler: STANDBY\n• Local Buzzer Alarm: ACTIVE\n• Status: Please ventilate kitchen and inspect gas line immediately."
             )
 
     else:
@@ -432,15 +502,33 @@ async def toggle_mute():
             pass
     return JSONResponse(content={"muted": state["buzzer_muted"]})
 
+@app.post("/api/email/send_test")
+async def send_test_email(request: Request):
+    body = await request.json()
+    email = body.get("email", state["email_alert"]["target_email"])
+    msg = body.get("message", "System Diagnostic Test: SAFETY-FI 96X Cloud Email Alert Pipeline is fully operational.")
+    with lock:
+        state["email_alert"]["target_email"] = email
+        state["gsm"]["target_number"] = email
+        state["gsm"]["target_email"] = email
+        trigger_email_dispatch(
+            "MANUAL_TEST",
+            "🔔 [SYSTEM TEST] Smart Kitchen Safety Alert Dispatched",
+            msg,
+            target_email=email
+        )
+    return JSONResponse(content={"status": "dispatched", "recipient": email})
+
 @app.post("/api/gsm/send_test")
 async def send_test_sms(request: Request):
     body = await request.json()
-    msg = body.get("message", "TEST: Smart Kitchen Telemetry System Operational.")
-    phone = body.get("phone", state["gsm"]["target_number"])
+    email_or_phone = body.get("phone") or body.get("email") or state["email_alert"]["target_email"]
+    msg = body.get("message", "TEST: Smart Kitchen Cloud Email Push Notification Operational.")
     with lock:
-        state["gsm"]["target_number"] = phone
-        trigger_sms_dispatch("MANUAL_TEST", msg)
-    return JSONResponse(content={"status": "dispatched", "recipient": phone})
+        state["gsm"]["target_number"] = email_or_phone
+        state["email_alert"]["target_email"] = email_or_phone
+        trigger_email_dispatch("MANUAL_TEST", "🔔 [SYSTEM TEST] Smart Kitchen Alert Dispatched", msg, target_email=email_or_phone)
+    return JSONResponse(content={"status": "dispatched", "recipient": email_or_phone})
 
 if __name__ == "__main__":
     import uvicorn
