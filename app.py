@@ -504,9 +504,12 @@ async def toggle_mute():
 
 @app.post("/api/email/send_test")
 async def send_test_email(request: Request):
-    body = await request.json()
-    email = body.get("email", state["email_alert"]["target_email"])
-    msg = body.get("message", "System Diagnostic Test: SAFETY-FI 96X Cloud Email Alert Pipeline is fully operational.")
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    email = body.get("email") or state["email_alert"]["target_email"]
+    msg = body.get("message") or "System Diagnostic Test: SAFETY-FI 96X Cloud Email Alert Pipeline is fully operational."
     with lock:
         state["email_alert"]["target_email"] = email
         state["gsm"]["target_number"] = email
@@ -521,9 +524,12 @@ async def send_test_email(request: Request):
 
 @app.post("/api/gsm/send_test")
 async def send_test_sms(request: Request):
-    body = await request.json()
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
     email_or_phone = body.get("phone") or body.get("email") or state["email_alert"]["target_email"]
-    msg = body.get("message", "TEST: Smart Kitchen Cloud Email Push Notification Operational.")
+    msg = body.get("message") or "TEST: Smart Kitchen Cloud Email Push Notification Operational."
     with lock:
         state["gsm"]["target_number"] = email_or_phone
         state["email_alert"]["target_email"] = email_or_phone
