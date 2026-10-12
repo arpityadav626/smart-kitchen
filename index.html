@@ -996,15 +996,27 @@
                     </div>
                 </div>
 
-                <!-- Dispatch Interface -->
-                <div class="flex flex-col gap-1.5 pt-1 hairline-t">
-                    <div class="flex gap-2">
-                        <input id="smsPhoneInput" type="email" value="arpityadav6794@gmail.com" placeholder="Email address" class="bg-[#05070C] hairline-border text-xs px-3 py-2 rounded-full text-slate-200 flex-1 font-mono outline-none">
-                        <button onclick="dispatchEmailTest()" class="px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider text-black font-bold bg-[#CCFF00] hover:bg-[#D4F63C] premium-btn whitespace-nowrap">
-                            Send Test Mail
-                        </button>
+                <!-- 100% Autonomous Mode Banner -->
+                <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">100% Autonomous Mode</span>
                     </div>
-                    <span id="emailDispatchStatus" class="text-[9px] font-mono text-slate-400 text-center">⚡ Auto-dispatches to phone on Gas or Fire hazard</span>
+                    <span class="text-[9px] text-slate-400 font-mono">Auto-Sends on Red / Blue Alert</span>
+                </div>
+
+                <!-- Emergency Dispatch Info & Optional Viva Demo Button -->
+                <div class="flex flex-col gap-1.5 pt-1 hairline-t">
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                        <span>Recipient: <span class="text-[#CCFF00]">arpityadav6794@gmail.com</span></span>
+                        <span class="text-emerald-400 font-semibold">Auto-Trigger Armed</span>
+                    </div>
+                    <input id="smsPhoneInput" type="hidden" value="arpityadav6794@gmail.com">
+                    <button onclick="dispatchEmailTest()" class="w-full py-2 rounded-full text-xs font-mono uppercase tracking-wider text-slate-300 hover:text-black font-bold bg-white/5 hover:bg-[#CCFF00] border border-white/10 hover:border-[#CCFF00] transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane text-[10px]"></i>
+                        <span>Manual Viva Demo Test (Click to preview)</span>
+                    </button>
+                    <span id="emailDispatchStatus" class="text-[9px] font-mono text-emerald-400 text-center">⚡ Normal hazard alerts dispatch 100% automatically without any clicks</span>
                 </div>
             </div>
 
@@ -2265,11 +2277,9 @@
             if (rawTrigger === 2 && latchedHazardUntil === 0) {
                 latchedHazardState = 2;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
-                clientDispatchFormspree('fire', '🚨 [CRITICAL ALERT] Fire Flame Hazard Detected in Kitchen!', 'CRITICAL ALERT: Optical flame detected at kitchen cooktop! Solenoid sprinkler ENERGIZED, fan forced OFF.');
             } else if (rawTrigger === 1 && latchedHazardUntil === 0) {
                 latchedHazardState = 1;
                 latchedHazardUntil = now + HAZARD_MIN_HOLD_MS;
-                clientDispatchFormspree('gas', '⚠️ [WARNING ALERT] Combustible Gas / LPG Leak Detected!', `WARNING ALERT: Gas level (${gasAdc} PPM) exceeded safe threshold 600! Extractor fan engaged.`);
             }
 
             // STRICT 5-SECOND TIMER: Runs for exactly 5000ms, then TURANT BAND!
@@ -2287,8 +2297,10 @@
                 playSmsChime();
                 if (systemState === 2) {
                     playEmergencyAlarmSiren();
+                    clientDispatchFormspree('fire', '🚨 [CRITICAL ALERT] Fire Flame Hazard Detected in Kitchen!', 'CRITICAL ALERT: Optical flame detected at kitchen cooktop! Solenoid sprinkler ENERGIZED, fan forced OFF.');
                 } else if (systemState === 1) {
                     playGasWarningTone();
+                    clientDispatchFormspree('gas', '⚠️ [WARNING ALERT] Combustible Gas / LPG Leak Detected!', `WARNING ALERT: Gas level (${gasAdc} PPM) exceeded safe threshold 600! Extractor fan engaged.`);
                 }
             }
             syncUi();
@@ -2546,6 +2558,13 @@
 
         function setSystemState(target) {
             const now = Date.now();
+            try {
+                fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenario: target === 2 ? 'fire' : (target === 1 ? 'gas_leak' : 'safe') })
+                }).catch(() => {});
+            } catch(e) {}
             if (target === 2) {
                 flameDetected = true;
                 latchedHazardState = 2;
