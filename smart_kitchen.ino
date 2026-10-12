@@ -41,7 +41,7 @@
 
 // --- CONSTANTS & THRESHOLDS ---
 #define DHTTYPE            DHT11
-#define GAS_THRESHOLD      300   // Normal <= 300, Gas Leak > 300
+#define GAS_THRESHOLD      600   // Normal <= 600 (Ambient baseline ~520), Gas Leak > 600
 #define RELAY_ACTIVE       LOW   // Active-LOW Trigger (GND ON)
 #define RELAY_INACTIVE     HIGH  // Relay OFF (5V OFF)
 #define PUMP_MIN_DURATION  5000  // Pump runs for at least 5 seconds to extinguish fire
@@ -71,6 +71,7 @@ unsigned long lastTelemetryStream = 0; // 1000ms web stream
 unsigned long lastDhtRead = 0;         // 2000ms DHT sensor read
 unsigned long lastFireSeenTime = 0;    // 5-second minimum pump runtime latch
 unsigned long lastGasSeenTime = 0;     // 5-second minimum fan runtime latch
+int gasSpikeCount = 0;                 // 3-sample debounce counter for gas filter
 
 // --- STRICT 5-SECOND FLAME TIMER ---
 bool fireTimerActive = false;
@@ -150,7 +151,13 @@ void loop() {
   if (currentMillis - lastFastCheck >= 100) {
     lastFastCheck = currentMillis;
 
-    gasVal = analogRead(PIN_MQ_GAS);
+    // Multi-sample smoothing: Average 8 readings to eliminate electrical noise
+    long gasSum = 0;
+    for (int i = 0; i < 8; i++) {
+      gasSum += analogRead(PIN_MQ_GAS);
+      delayMicroseconds(50);
+    }
+    gasVal = (int)(gasSum / 8);
 
     // --- INSTANT FLAME SENSE + STRICT 5-SECOND ONE-SHOT TIMER ---
     int flameRaw = digitalRead(PIN_FLAME);
@@ -177,8 +184,20 @@ void loop() {
 
     bool fireActiveOrLatched = fireTimerActive;
 
-    // Check if gas is active OR within the 5-second exhaust fan run latch
-    bool gasActiveOrLatched = (gasVal > GAS_THRESHOLD || ((currentMillis - lastGasSeenTime) < GAS_MIN_DURATION && lastGasSeenTime > 0));
+    // Debouncing & Auto-Reset: Require gas to stay above threshold for 3 consecutive checks (300ms)
+    if (gasVal > GAS_THRESHOLD) {
+      if (gasSpikeCount < 3) gasSpikeCount++;
+      if (gasSpikeCount >= 3) {
+        lastGasSeenTime = currentMillis; // Update latch timestamp
+      }
+    } else {
+      gasSpikeCount = 0;
+      if (lastGasSeenTime > 0 && (currentMillis - lastGasSeenTime >= GAS_MIN_DURATION)) {
+        lastGasSeenTime = 0; // Clear latch after 5 seconds of clean air
+      }
+    }
+
+    bool gasActiveOrLatched = (gasSpikeCount >= 3) || (lastGasSeenTime > 0 && (currentMillis - lastGasSeenTime < GAS_MIN_DURATION));
 
     // ====================================================================
     // FINITE STATE MACHINE WITH 5-SECOND PUMP/FAN LATCH & AUTO-RESET
