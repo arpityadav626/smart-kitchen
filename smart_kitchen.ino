@@ -41,7 +41,7 @@
 
 // --- CONSTANTS & THRESHOLDS ---
 #define DHTTYPE            DHT11
-#define GAS_THRESHOLD      600   // Normal <= 600 (Ambient baseline ~520), Gas Leak > 600
+#define GAS_THRESHOLD      450   // Normal <= 450, Gas/Smoke Leak > 450
 #define RELAY_ACTIVE       LOW   // Active-LOW Trigger (GND ON)
 #define RELAY_INACTIVE     HIGH  // Relay OFF (5V OFF)
 #define PUMP_MIN_DURATION  5000  // Pump runs for at least 5 seconds to extinguish fire

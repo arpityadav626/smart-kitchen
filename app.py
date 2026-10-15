@@ -211,7 +211,7 @@ def update_fsm_logic(hw_state=None, flame_input=None):
     if (flame_active or hw_state == 2) and last_fire_seen == 0.0:
         last_fire_seen = now
 
-    is_gas = (hw_state == 1) or (gas > 600)
+    is_gas = (hw_state == 1) or (gas > 450)
     if is_gas:
         last_gas_seen = now
 
@@ -277,7 +277,7 @@ def update_fsm_logic(hw_state=None, flame_input=None):
             trigger_email_dispatch(
                 "GAS_LEAKAGE",
                 "⚠️ [WARNING ALERT] LPG Gas Leakage Detected in Kitchen!",
-                f"WARNING ALERT: MQ-2 Sensor detected dangerous gas concentration of {gas} PPM (Exceeding safety limit 600)!\n• Exhaust Ventilation Fan: ENERGIZED (Extracting combustible vapor)\n• Solenoid Sprinkler: STANDBY\n• Local Buzzer Alarm: ACTIVE\n• Status: Please ventilate kitchen and inspect gas line immediately."
+                f"WARNING ALERT: MQ-2 Sensor detected dangerous gas concentration of {gas} PPM (Exceeding safety limit 450)!\n• Exhaust Ventilation Fan: ENERGIZED (Extracting combustible vapor)\n• Solenoid Sprinkler: STANDBY\n• Local Buzzer Alarm: ACTIVE\n• Status: Please ventilate kitchen and inspect gas line immediately."
             )
 
     else:
@@ -455,7 +455,7 @@ async def simulate_scenario(request: Request):
             state["gas"] = 750
             state["flame"] = False
             state["raw_flame"] = False
-            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 750 PPM > Threshold 600) - 5s Hold Active")
+            add_log("[SIMULATOR] Simulated LPG/Smoke Leakage (Gas: 750 PPM > Threshold 450) - 5s Hold Active")
         elif scenario == "fire":
             last_fire_seen = time.time()
             state["raw_flame"] = True
@@ -469,7 +469,7 @@ async def simulate_scenario(request: Request):
         elif scenario == "custom":
             if "gas" in body:
                 state["gas"] = int(body["gas"])
-                if state["gas"] > 600:
+                if state["gas"] > 450:
                     last_gas_seen = time.time()
             if "flame" in body:
                 state["raw_flame"] = bool(body["flame"])
