@@ -56,7 +56,7 @@ state = {
     "email_alert": {
         "status": "ARMED",
         "gateway": "Formspree Cloud IoT Gateway",
-        "endpoint": "https://formspree.io/f/xaeqadvd",
+        "endpoint": "https://formspree.io/f/xaeqalbg",
         "target_email": "arpityadav6794@gmail.com",
         "last_email": None,
         "email_count": 0,
@@ -79,7 +79,7 @@ state = {
         "sms_count": 0,
         "at_logs": [
             "HTTP/2 POST -> Formspree Cloud",
-            "Endpoint: /f/xaeqadvd",
+            "Endpoint: /f/xaeqalbg",
             "Target: arpityadav6794@gmail.com",
             "Push Notification: Instant Phone Alert",
             "Status: 200 OK (Armed)"
@@ -103,7 +103,7 @@ manual_selected_port = None
 serial_connection = None
 stop_thread = False
 
-FORMSPREE_URL = "https://formspree.io/f/xaeqadvd"
+FORMSPREE_URL = "https://formspree.io/f/xaeqalbg"
 DEFAULT_EMAIL = "arpityadav6794@gmail.com"
 last_email_dispatched_at = {"FIRE_EMERGENCY": 0.0, "GAS_LEAKAGE": 0.0, "MANUAL_TEST": 0.0}
 
