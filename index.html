@@ -2647,7 +2647,7 @@
             } catch(e) {
                 // 2. Direct client-side Formspree fallback (works on GitHub Pages / standalone)
                 try {
-                    await fetch("https://formspree.io/f/xeaepjgk", {
+                    await fetch("https://formspree.io/f/xaeqadvd", {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Accept": "application/json" },
                         body: JSON.stringify({
@@ -2705,7 +2705,7 @@
 
                 // 2. Direct client-side Formspree fallback
                 if (!dispatched) {
-                    const fResp = await fetch("https://formspree.io/f/xeaepjgk", {
+                    const fResp = await fetch("https://formspree.io/f/xaeqadvd", {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Accept": "application/json" },
                         body: JSON.stringify({
